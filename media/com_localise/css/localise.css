@@ -322,6 +322,13 @@ ul.adminformlist li {
 	background-position: bottom left;
 	background-repeat: repeat-x;
 }
+.CodeMirror-fullscreen {
+  position: fixed !important;
+  top: 0; left: 0; right: 0; bottom: 0 !important;
+  height: auto !important;
+  z-index: 1021 !important;
+}
+/* Strings diff */
 .text_changes {
 border: 1px dashed gray !important;
 background-color: #FFFFCC;
@@ -341,6 +348,7 @@ background-color: red !important;
 .new_word {
 color:#8B0000 !important;
 }
+/* Accordions */
 .accordion-heading .accordion-toggle {
     margin-top: 10px;
     display: block;
@@ -377,7 +385,6 @@ span.extra::before {
   content: "● ";
   color: darkorange;
 }
-
 /* AJAX calls */
 .flash-message {
   position: fixed !important;
@@ -385,7 +392,6 @@ span.extra::before {
   right: 45% !important;
   z-index: 100 !important;
 }
-
 /* grammar case */
 .grammar {
   text-align: start;

@@ -83,7 +83,7 @@ class IniField extends FormField
 				$(document).ready(function() {
 					var editor = CodeMirror.fromTextArea(document.getElementById('" . $this->id . "'), " . json_encode($options) . ");
 					editor.setOption('extraKeys', {
-						'Ctrl-Q': function(cm) {
+						'F10': function(cm) {
 							cm.setOption('fullScreen', !cm.getOption('fullScreen'));
 						},
 						'Esc': function(cm) {
