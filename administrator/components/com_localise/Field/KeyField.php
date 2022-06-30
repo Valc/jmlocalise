@@ -280,6 +280,7 @@ class KeyField extends FormField
 
 				$class   = '';
 				//$button  = '<br>';
+				$button  = '';
 				$button .= '<i class="icon-16-notinreference hasTooltip pointer" title="';
 				$button .= Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_EXTRA_KEYS_IN_TRANSLATION_ICON');
 				$button .= '" onclick="' . $onclick . '"></i>';
