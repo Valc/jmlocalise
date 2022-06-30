@@ -123,7 +123,7 @@ class KeyField extends FormField
 			$textchanges_checkbox .= $this->element['name'];
 			$textchanges_checkbox .= ']" value="';
 			$textchanges_checkbox .= htmlspecialchars($textchange_target, ENT_COMPAT, 'UTF-8');
-			$textchanges_checkbox .= '" ></input>';
+			$textchanges_checkbox .= '" ><br></input>';
 
 			$return  = '';
 			$return .= '<div><label id="';
@@ -173,14 +173,14 @@ class KeyField extends FormField
 			$return .= '">';
 			$return .= $this->element['label'];
 			$return .= $notinref_checkbox;
-			$return .= '</label></div>';
+			$return .= '<br></label></div>';
 
 			return $return;
 		}
 		else if ($status == 'extra' && !$istranslation)
 		{
 			// Set the class for the label when it is an extra key in the en-GB language.
-			$class = !empty($this->descText) ? 'key-label hasTooltip fltrt' : 'key-label fltrt';
+			$class = !empty($this->descText) ? 'key-label fltrt hasTooltip' : 'key-label fltrt';
 
 			// If a description is specified, use it to build a tooltip.
 			if (!empty($this->descText))
@@ -201,7 +201,7 @@ class KeyField extends FormField
 		else
 		{
 			// Set the class for the label for any other case.
-			$class = !empty($this->descText) ? 'key-label hasTooltip fltrt' : 'key-label fltrt';
+			$class = !empty($this->descText) ? 'key-label fltrt hasTooltip' : 'key-label fltrt';
 
 			// If a description is specified, use it to build a tooltip.
 			if (!empty($this->descText))
@@ -228,8 +228,8 @@ class KeyField extends FormField
 	 */
 	protected function getInput()
 	{
-		// Set the class for the label for any other case.
-		$class         = !empty($this->descText) ? 'key-label hasTooltip fltrt' : 'key-label fltrt';
+		// Set the class for the input for any other case.
+		$class         = '';
 		$istranslation = (int) $this->element['istranslation'];
 		$istextchange  = (int) $this->element['istextchange'];
 		$isextraindev  = (int) $this->element['isextraindev'];
@@ -247,7 +247,7 @@ class KeyField extends FormField
 		}
 		else
 		{
-			$commented = '<div> <span class="badge"> </span></div>';
+			$commented = '';
 		}
 
 		if ($istranslation)
@@ -279,7 +279,7 @@ class KeyField extends FormField
 									";
 
 				$class   = '';
-				$button  = '<br>';
+				//$button  = '<br>';
 				$button .= '<i class="icon-16-notinreference hasTooltip pointer" title="';
 				$button .= Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_EXTRA_KEYS_IN_TRANSLATION_ICON');
 				$button .= '" onclick="' . $onclick . '"></i>';

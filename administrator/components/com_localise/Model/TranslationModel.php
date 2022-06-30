@@ -340,8 +340,10 @@ class TranslationModel extends AdminModel
 					}
 
 					$stream->seek(0);
-					$continue   = true;
-					$lineNumber = 0;
+					$continue    = true;
+					$lineNumber  = 0;
+					$has_headers = false;
+					$is_string   = false;
 
 					$isTranslationsView = Factory::getApplication()->input->get('view') == 'translations';
 
@@ -349,6 +351,23 @@ class TranslationModel extends AdminModel
 					{
 						$line = $stream->gets();
 						$lineNumber++;
+
+						// Adding some control to detect if the file have headers.
+						if ($lineNumber == '1' && $line[0] != ';')
+						{
+							$headerline = str_replace('\"', '"_QQ_"', $line);
+
+							if (preg_match('/^(|(\[[^\]]*\])|([A-Z][A-Z0-9_:\*\-\.]*\s*=(\s*(("[^"]*")|(_QQ_)))+))\s*(;.*)?$/', $headerline))
+							{
+								// The fist line is a string and no headders are prensent.
+								$is_string = true;
+							}
+						}
+						elseif ($lineNumber == '1' && $line[0] == ';')
+						{
+							// The file start with a standar header.
+							$has_headers = true;
+						}
 
 						if ($line[0] == '#')
 						{
@@ -481,6 +500,13 @@ class TranslationModel extends AdminModel
 					if (empty($this->item->additionalcopyright) && $params->get('additionalcopyright') && !$isTranslationsView)
 					{
 						$this->item->additionalcopyright[] = $params->get('additionalcopyright');
+					}
+
+					// Starting from the begin again if no headers are present.
+					if ($has_headers == false && $is_string == true)
+					{
+						$stream->seek(0);
+						$lineNumber = 0;
 					}
 
 					while (!$stream->eof())
@@ -961,6 +987,10 @@ class TranslationModel extends AdminModel
 			{
 				$stream = new Stream;
 				$stream->open($refpath);
+				$stream->seek(0);
+
+				// $header is used to avoid display at regular edition mode the file headers.
+				// It starts as true due normaly all the core files to translate have the en-GB credits presents at the begin of the file to translate.
 				$header     = true;
 				$lineNumber = 0;
 
@@ -970,10 +1000,33 @@ class TranslationModel extends AdminModel
 					$commented = '';
 					$lineNumber++;
 
+					// Due the 3pd non core files to translate maybe have no en-GB headers to catch, this vars will help to detect it.
+					$is_string  = false;
+					$has_headers = false;
+
+					// Adding some control to detect if the file have headers.
+					if ($lineNumber == '1' && $line[0] != ';')
+					{
+						$headerline = str_replace('\"', '"_QQ_"', $line);
+
+						if (preg_match('/^(|(\[[^\]]*\])|([A-Z][A-Z0-9_:\*\-\.]*\s*=(\s*(("[^"]*")|(_QQ_)))+))\s*(;.*)?$/', $headerline))
+						{
+							// The first line is a string and no headers are prensent.
+							$is_string = true;
+							$header    = false;
+						}
+					}
+					elseif ($lineNumber == '1' && $line[0] == ';')
+					{
+						// The file start with a standar header.
+						$has_headers = true;
+					}
+
 					// Blank lines
 					if (preg_match('/^\s*$/', $line))
 					{
-						$header = true;
+						// The first black line, if present, means it is the headers end and that one and next ones will be handled as 'type spacer'.
+						$header = false;
 						$field  = $fieldset->addChild('field');
 						$field->addAttribute('label', '');
 						$field->addAttribute('type', 'spacer');
@@ -997,6 +1050,7 @@ class TranslationModel extends AdminModel
 					// Comment lines
 					elseif (!$header && preg_match('/^;(.*)$/', $line, $matches))
 					{
+						// When $header is false means than this one is a comment line present within the en-GB reference to display.
 						$key   = $matches[1];
 						$field = $fieldset->addChild('field');
 						$field->addAttribute('label', $key);
@@ -1011,11 +1065,11 @@ class TranslationModel extends AdminModel
 						$key        = $matches[1];
 						$field      = $fieldset->addChild('field');
 
-						preg_match('/(\s;\s.*)$/', $line, $contextcomment);
+						preg_match('/("\s;\s.*)$/', $line, $contextcomment);
 
 						if (!empty($contextcomment[1]))
 						{
-							$commented = $contextcomment[1];
+							$commented = ltrim($contextcomment[1], '"');
 						}
 
 						$field->addAttribute('commented', $commented);
@@ -1071,7 +1125,8 @@ class TranslationModel extends AdminModel
 								. ']</strong> </span><strong>'
 								. $key
 								. '</strong><br>'
-								. htmlspecialchars($string, ENT_COMPAT, 'UTF-8');
+								. htmlspecialchars($string, ENT_COMPAT, 'UTF-8')
+								. '<br><br>';
 
 							$field->attributes()->isextraindev = 1;
 						}
@@ -1080,8 +1135,13 @@ class TranslationModel extends AdminModel
 							$label   = '<strong>'
 								. $key
 								. '</strong><br>'
-								. htmlspecialchars($string, ENT_COMPAT, 'UTF-8');
+								. htmlspecialchars($string, ENT_COMPAT, 'UTF-8')
+								. '<br><br>';
 						}
+
+						$label = '<div class="word-break-width-100">'
+							. $label
+							. '</div>';
 
 						$field->addAttribute('status', $status);
 						$field->addAttribute('description', $string);
@@ -1134,7 +1194,10 @@ class TranslationModel extends AdminModel
 							$status  = 'extra';
 							$default = $string;
 
-							$label = '<br><strong>' . $key . '</strong>';
+							$label = '<strong>' . $key . '</strong>';
+							$label = '<div class="word-break-width-100">'
+								. $label
+								. '</div>';
 
 							$field->addAttribute('status', $status);
 							$field->addAttribute('description', $string);
@@ -1222,6 +1285,12 @@ class TranslationModel extends AdminModel
 		$refexists     = File::exists($refpath);
 		$notinref      = (array) $data['notinref'];
 		$istranslation = $tag != $reftag;
+		$notinref      = array();
+
+		if (isset($data['notinref']))
+		{
+			$notinref  = (array) $data['notinref'];
+		}
 
 		if ($refexists && !empty($devpath))
 		{
@@ -1345,6 +1414,7 @@ class TranslationModel extends AdminModel
 
 			$contents = array();
 			$stream   = new Stream;
+			$stream->seek(0);
 
 			if ($exists)
 			{
@@ -1369,6 +1439,7 @@ class TranslationModel extends AdminModel
 				{
 					$stream->close();
 					$stream->open($refpath);
+					$stream->seek(0);
 
 					while (!$stream->eof())
 					{
@@ -1385,6 +1456,7 @@ class TranslationModel extends AdminModel
 			else
 			{
 				$stream->open($refpath);
+				$stream->seek(0);
 
 				while (!$stream->eof())
 				{
@@ -1403,6 +1475,8 @@ class TranslationModel extends AdminModel
 			}
 
 			$strings = $data['strings'];
+
+			$stream->seek(0);
 
 			while (!$stream->eof())
 			{
@@ -1431,11 +1505,11 @@ class TranslationModel extends AdminModel
 					$key       = $matches[1];
 					$commented = '';
 
-					preg_match('/(\s;\s.*)$/', $line, $contextcomment);
+					preg_match('/("\s;\s.*)$/', $line, $contextcomment);
 
 					if (!empty($contextcomment[1]))
 					{
-						$commented = $contextcomment[1];
+						$commented = ltrim($contextcomment[1], '"');
 					}
 
 					if (isset($strings[$key]))
