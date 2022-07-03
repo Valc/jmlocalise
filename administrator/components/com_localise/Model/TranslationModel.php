@@ -887,6 +887,10 @@ class TranslationModel extends AdminModel
 		$istranslation       = '';
 		$extras_amount       = 0;
 		$text_changes_amount = 0;
+		$reflang             = '';
+		$targetlang          = '';
+		$reflang_rtl         = 0;
+		$targetlang_rtl      = 0;
 
 		// Compute all known languages
 		static $languages = array();
