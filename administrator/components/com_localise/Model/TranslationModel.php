@@ -223,6 +223,8 @@ class TranslationModel extends AdminModel
 										'additionalcopyright' => array(),
 										'license'             => '',
 										'exists'              => File::exists($this->getState('translation.path')),
+										'reflang'             => $reftag,
+										'targetlang'          => $tag,
 										'istranslation'       => $istranslation,
 										'developdata'         => (array) $developdata,
 										'translatedkeys'      => (array) $translatedkeys,
@@ -902,9 +904,15 @@ class TranslationModel extends AdminModel
 			$form->setFieldAttribute('legend', 'untranslated', $item->total - $item->translated - $item->unchanged, 'legend');
 			$form->setFieldAttribute('legend', 'extra', $item->extra, 'legend');
 
-			$developdata    = $item->developdata;
-			$revisedchanges = $item->revisedchanges;
-			$istranslation  = $item->istranslation;
+			$developdata         = $item->developdata;
+			$revisedchanges      = $item->revisedchanges;
+			$reflang             = $item->reflang;
+			$targetlang          = $item->targetlang;
+			$istranslation       = $item->istranslation;
+			$reflang_metadata    = LanguageHelper::getMetadata($reflang);
+			$targetlang_metadata = LanguageHelper::getMetadata($targetlang);
+			$reflang_rtl         = (int) $reflang_metadata['rtl'];
+			$targetlang_rtl      = (int) $targetlang_metadata['rtl'];
 		}
 
 		if ($this->getState('translation.layout') != 'raw')
@@ -1031,6 +1039,7 @@ class TranslationModel extends AdminModel
 						$field->addAttribute('label', '');
 						$field->addAttribute('type', 'spacer');
 						$field->addAttribute('class', 'text');
+
 						continue;
 					}
 					// Section lines
@@ -1045,6 +1054,7 @@ class TranslationModel extends AdminModel
 						$fieldset = $group->addChild('fieldset');
 						$fieldset->addAttribute('name', $section);
 						$fieldset->addAttribute('label', $section);
+
 						continue;
 					}
 					// Comment lines
@@ -1053,9 +1063,10 @@ class TranslationModel extends AdminModel
 						// When $header is false means than this one is a comment line present within the en-GB reference to display.
 						$key   = $matches[1];
 						$field = $fieldset->addChild('field');
-						$field->addAttribute('label', $key);
+						$field->addAttribute('label', htmlspecialchars($line));
 						$field->addAttribute('type', 'spacer');
-						$field->addAttribute('class', 'text');
+						$field->addAttribute('class', 'edition-comment normal-text');
+
 						continue;
 					}
 					// Key lines
@@ -1107,9 +1118,9 @@ class TranslationModel extends AdminModel
 							$sourcetext = $developdata['text_changes']['ref'][$key];
 							$targettext = $developdata['text_changes']['ref_in_dev'][$key];
 
-							$label   = '<strong>'
+							$label = '<p class="key-case"><strong>'
 								. $key
-								. '</strong><br><p class="text_changes">'
+								. '</strong></p><p class="text_changes normal-text">'
 								. $change
 								. '</p>';
 
@@ -1120,23 +1131,23 @@ class TranslationModel extends AdminModel
 						}
 						elseif ($have_develop == '1' && in_array($key, $developdata['extra_keys']['keys']))
 						{
-							$label   = '<span class="new_word"><strong>['
+							$label = '<p class="key-case"><span class="new_word"><strong>['
 								. Text::_('COM_LOCALISE_NEW_KEY_IN_DEVELOP')
 								. ']</strong> </span><strong>'
 								. $key
-								. '</strong><br>'
+								. '</strong></p><p class="normal-text">'
 								. htmlspecialchars($string, ENT_COMPAT, 'UTF-8')
-								. '<br><br>';
+								. '</p>';
 
 							$field->attributes()->isextraindev = 1;
 						}
 						else
 						{
-							$label   = '<strong>'
+							$label = '<p class="key-case"><strong>'
 								. $key
-								. '</strong><br>'
+								. '</strong></p><p class="normal-text">'
 								. htmlspecialchars($string, ENT_COMPAT, 'UTF-8')
-								. '<br><br>';
+								. '</p>';
 						}
 
 						$label = '<div class="word-break-width-100">'
@@ -1157,6 +1168,10 @@ class TranslationModel extends AdminModel
 
 						$field->addAttribute('label', $label);
 						$field->addAttribute('name', $key);
+						$field->addAttribute('reflang', $reflang);
+						$field->addAttribute('targetlang', $targetlang);
+						$field->addAttribute('reflang_is_rtl', $reflang_rtl);
+						$field->addAttribute('targetlang_is_rtl', $targetlang_rtl);
 						$field->addAttribute('type', 'key');
 						$field->addAttribute('filter', 'raw');
 
@@ -1194,7 +1209,9 @@ class TranslationModel extends AdminModel
 							$status  = 'extra';
 							$default = $string;
 
-							$label = '<strong>' . $key . '</strong>';
+							$label = '<p class="key-case"><strong>'
+								. $key
+								. '</strong></p>';
 							$label = '<div class="word-break-width-100">'
 								. $label
 								. '</div>';
@@ -1214,6 +1231,10 @@ class TranslationModel extends AdminModel
 
 							$field->addAttribute('label', $label);
 							$field->addAttribute('name', $key);
+							$field->addAttribute('reflang', $reflang);
+							$field->addAttribute('targetlang', $targetlang);
+							$field->addAttribute('reflang_is_rtl', $reflang_rtl);
+							$field->addAttribute('targetlang_is_rtl', $targetlang_rtl);
 							$field->addAttribute('type', 'key');
 							$field->addAttribute('filter', 'raw');
 						}

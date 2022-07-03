@@ -11,10 +11,13 @@ namespace Joomla\Component\Localise\Administrator\Field;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
+use Joomla\Registry\Registry;
 
 /**
  * Form Field Key class.
@@ -34,26 +37,35 @@ class KeyField extends FormField
 	protected $type = 'Key';
 
 	/**
-	 * Method to get the field label.
+	 * Method to get the field label markup and related data.
 	 *
-	 * @return  string    The field label.
-	 */
-
-	/**
-	 * Method to get the field label markup.
-	 *
-	 * @return  string  The field label markup.
+	 * @return  object  The field label markup and related data.
 	 *
 	 * @since  1.6
 	 */
 	protected function getLabel()
 	{
+		$field_data                 = new \JObject;
+		$field_data->field_label    = '';
+		$field_data->field_checkbox = '';
+
+		$reflang = (string) $this->element['reflang'];
+		$is_rtl  = (int) $this->element['reflang_is_rtl'];
+
+		$direction = "ltr";
+
+		if ($is_rtl == '1')
+		{
+			$direction = "rtl";
+		}
+
 		// Set the class for the label.
-		$class         = !empty($this->descText) ? 'key-label hasTooltip fltrt' : 'key-label fltrt';
+		$class         = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
 
 		$istranslation = (int) $this->element['istranslation'];
 		$status        = (string) $this->element['status'];
 		$istextchange  = (int) $this->element['istextchange'];
+		$is_comment    = false;
 
 		if ($istextchange == '1')
 		{
@@ -93,10 +105,10 @@ class KeyField extends FormField
 			}
 
 			$textchanges_checkbox  = '';
-			$textchanges_checkbox .= '<div><strong>' . $title . '</strong><input style="max-width:5%; min-width:5%;" id="';
+			$textchanges_checkbox .= '<div><strong>' . $title . '</strong><input style="" id="';
 			$textchanges_checkbox .= $textchange_visible_id;
 			$textchanges_checkbox .= '" type="checkbox" ';
-			$textchanges_checkbox .= ' name="jform[vtext_changes][]" value="';
+			$textchanges_checkbox .= ' name="jform[vtext_changes][]" class="' . $class . '"value="';
 			$textchanges_checkbox .= $this->element['name'];
 			$textchanges_checkbox .= '" title="' . $tip . '" onclick="';
 			$textchanges_checkbox .= $textchanges_onclick;
@@ -123,23 +135,25 @@ class KeyField extends FormField
 			$textchanges_checkbox .= $this->element['name'];
 			$textchanges_checkbox .= ']" value="';
 			$textchanges_checkbox .= htmlspecialchars($textchange_target, ENT_COMPAT, 'UTF-8');
-			$textchanges_checkbox .= '" ><br></input>';
+			$textchanges_checkbox .= '" ></input>';
 
-			$return  = '';
-			$return .= '<div><label id="';
-			$return .= $this->id;
-			$return .= '-lbl" for="';
-			$return .= $this->id;
-			$return .= '">';
-			$return .= $this->element['label'];
-			$return .= $textchanges_checkbox;
-			$return .= '</label></div>';
+			$label  = '';
+			$label .= '<div><label id="';
+			$label .= $this->id;
+			$label .= '-lbl" for="';
+			$label .= $this->id;
+			$label .= '" class="' . $class . '">';
+			$label .= $this->element['label'];
+			$label .= '</label></div>';
 
-			return $return;
+			$field_data->field_label = $label;
+			$field_data->field_checkbox = '<div class="float-end">' . $textchanges_checkbox . '</div>';
+
+			return $field_data;
 		}
 		else if ($status == 'extra' && $istranslation)
 		{
-			$class                = '';
+			$class                = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
 			$tip                  = Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_NOTINREF');
 			$title                = Text::_('COM_LOCALISE_DELETE');
 			$notinref_key         = (string) $this->element['label'];
@@ -154,7 +168,7 @@ class KeyField extends FormField
 									";
 
 			$notinref_checkbox  = '';
-			$notinref_checkbox .= '<div><strong>' . $title . '</strong><input style="max-width:5%; min-width:5%;"';
+			$notinref_checkbox .= '<div><strong>' . $title . '</strong><input style=""';
 			$notinref_checkbox .= ' title="' . $tip . '"';
 			$notinref_checkbox .= ' id="' . $notinref_checkbox_id . '"';
 			$notinref_checkbox .= ' type="checkbox" ';
@@ -165,22 +179,24 @@ class KeyField extends FormField
 			$notinref_checkbox .= '" class="' . $class . '"';
 			$notinref_checkbox .= '></input></div>';
 
-			$return  = '';
-			$return .= '<div><label id="';
-			$return .= $this->id;
-			$return .= '-lbl" for="';
-			$return .= $this->id;
-			$return .= '">';
-			$return .= $this->element['label'];
-			$return .= $notinref_checkbox;
-			$return .= '<br></label></div>';
+			$label  = '';
+			$label .= '<div><label id="';
+			$label .= $this->id;
+			$label .= '-lbl" for="';
+			$label .= $this->id;
+			$label .= '" class="' . $class . '">';
+			$label .= $this->element['label'];
+			$label .= '</label></div>';
 
-			return $return;
+			$field_data->field_label    = $label;
+			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
+
+			return $field_data;
 		}
 		else if ($status == 'extra' && !$istranslation)
 		{
 			// Set the class for the label when it is an extra key in the en-GB language.
-			$class = !empty($this->descText) ? 'key-label fltrt hasTooltip' : 'key-label fltrt';
+			$class = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
 
 			// If a description is specified, use it to build a tooltip.
 			if (!empty($this->descText))
@@ -196,12 +212,14 @@ class KeyField extends FormField
 			$label .= $this->element['label'];
 			$label .= '</label>';
 
-			return $label;
+			$field_data->field_label = $label;
+
+			return $field_data;
 		}
 		else
 		{
 			// Set the class for the label for any other case.
-			$class = !empty($this->descText) ? 'key-label fltrt hasTooltip' : 'key-label fltrt';
+			$class = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
 
 			// If a description is specified, use it to build a tooltip.
 			if (!empty($this->descText))
@@ -217,19 +235,37 @@ class KeyField extends FormField
 			$label .= $this->element['label'];
 			$label .= '</label>';
 
-			return $label;
+			$field_data->field_label = $label;
+
+			return $field_data;
 		}
 	}
 
 	/**
-	 * Method to get the field input.
+	 * Method to get the field input and related data.
 	 *
-	 * @return  string    The field input.
+	 * @return  object  The field input markup and related data.
 	 */
 	protected function getInput()
 	{
+		$field_data                  = new \JObject;
+		$field_data->field_input     = '';
+		$field_data->field_button    = '';
+		$field_data->field_button2   = '';
+		$field_data->field_commented = '';
+
+		$targetlang    = (string) $this->element['targetlang'];
+		$is_rtl        = (int) $this->element['targetlang_is_rtl'];
+
+		$direction = "ltr";
+
+		if ($is_rtl == '1')
+		{
+			$direction = "rtl";
+		}
+
 		// Set the class for the input for any other case.
-		$class         = '';
+		$class         = $direction;
 		$istranslation = (int) $this->element['istranslation'];
 		$istextchange  = (int) $this->element['istextchange'];
 		$isextraindev  = (int) $this->element['isextraindev'];
@@ -262,10 +298,8 @@ class KeyField extends FormField
 
 			if ($status == 'extra')
 			{
+				$class .= " width-100 $status";
 				$input  = '';
-				$input .= '<textarea name="' . $textarea_name;
-				$input .= '" id="' . $textarea_id . '" class="width-45 ' . $status . ' ">';
-				$input .= htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8') . '</textarea>';
 
 				$notinref_key         = (string) $this->element['label'];
 				$notinref_checkbox_id = "notinref_checkbox_id_" . str_replace(array("_", ":"), "", $this->element['name']);
@@ -278,36 +312,40 @@ class KeyField extends FormField
 									form.find('input[name=notinref]').val(checked_values);
 									";
 
-				$class   = '';
-				//$button  = '<br>';
 				$button  = '';
 				$button .= '<i class="icon-16-notinreference hasTooltip pointer" title="';
 				$button .= Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_EXTRA_KEYS_IN_TRANSLATION_ICON');
-				$button .= '" onclick="' . $onclick . '"></i>';
+				$button .= '" onclick="' . $onclick . '"></i><br>';
 
 				$button2 = '';
 
 				$input  = '';
 				$input .= '<textarea name="' . $textarea_name . '" id="' . $textarea_id . '"';
-				$input .= ' class="width-45 ' . $status . '">';
-				$input .= htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8') . '</textarea><br>';
+				$input .= ' class="' . $class . '">';
+				$input .= htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8') . '</textarea>';
 
-				return $button . $button2 . $commented . $input;
+				$field_data->field_input     = $input;
+				$field_data->field_button    = $button;
+				$field_data->field_button2   = $button2;
+				$field_data->field_commented = $commented;
+				return $field_data;
 			}
 			else
 			{
+				$class .= " width-100 $status";
+
 				$onclick  = "";
 				$onclick .= "javascript:document.getElementById('" . $id . "').value='";
 				$onclick .= addslashes(htmlspecialchars($this->element['description'], ENT_COMPAT, 'UTF-8'));
 				$onclick .= "';";
-				$onclick .= "document.getElementById('" . $id . "').setAttribute('class','width-45 untranslated');";
+				$onclick .= "document.getElementById('" . $id . "').setAttribute('class','width-100 untranslated " . $direction . "');";
 
 				$onclick2 = "";
 
 				$button   = '';
 				$button  .= '<i class="icon-reset hasTooltip return pointer" title="';
 				$button  .= Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_INSERT');
-				$button  .= '" onclick="' . $onclick . '"></i>';
+				$button  .= '" onclick="' . $onclick . '"></i><br>';
 
 				$onkeyup = "javascript:";
 
@@ -315,40 +353,40 @@ class KeyField extends FormField
 				{
 					$onkeyup .= "if (this.getAttribute('value')=='')
 							{
-								this.setAttribute('class','width-45 untranslated');
+								this.setAttribute('class','width-100 untranslated " . $direction . "');
 							}
 							else if (this.getAttribute('value')=='"
 							. addslashes(htmlspecialchars($this->element['description'], ENT_COMPAT, 'UTF-8'))
 							. "')
 							{
-								this.setAttribute('class','width-45 untranslated');
+								this.setAttribute('class','width-100 untranslated " . $direction . "');
 							}
 							else if (this.getAttribute('value')=='"
 							. addslashes(htmlspecialchars($this->element['frozen_task'], ENT_COMPAT, 'UTF-8'))
 							. "')
 							{
-								this.setAttribute('class','width-45 untranslated');
+								this.setAttribute('class','width-100 untranslated " . $direction . "');
 							}
 							else
 							{
-								this.setAttribute('class','width-45 translated');
+								this.setAttribute('class','width-100 translated " . $direction . "');
 							}";
 				}
 				else
 				{
 					$onkeyup .= "if (this.getAttribute('value')=='')
 							{
-								this.setAttribute('class','width-45 untranslated');
+								this.setAttribute('class','width-100 untranslated " . $direction . "');
 							}
 							else if (this.getAttribute('value')=='"
 							. addslashes(htmlspecialchars($this->element['description'], ENT_COMPAT, 'UTF-8'))
 							. "')
 							{
-								this.setAttribute('class','width-45 untranslated');
+								this.setAttribute('class','width-100 untranslated " . $direction . "');
 							}
 							else
 							{
-								this.setAttribute('class','width-45 translated');
+								this.setAttribute('class','width-100 translated " . $direction . "');
 							}";
 				}
 
@@ -356,11 +394,15 @@ class KeyField extends FormField
 
 				$input  = '';
 				$input .= '<textarea name="' . $textarea_name . '" id="' . $textarea_id . '" onfocus="' . $onfocus;
-				$input .= '" class="width-45 ' . $status . '" onkeyup="';
+				$input .= '" class="' . $class . '" onkeyup="';
 				$input .= $onkeyup . '">' . htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8') . '</textarea>';
 			}
 
-			return $button . $button2 . $commented . $input;
+			$field_data->field_input     = $input;
+			$field_data->field_button    = $button;
+			$field_data->field_button2   = $button2;
+			$field_data->field_commented = $commented;
+			return $field_data;
 		}
 		else
 		{
@@ -385,7 +427,7 @@ class KeyField extends FormField
 			$onclick .= "document.getElementById('" . $id . "').value='";
 			$onclick .= addslashes(htmlspecialchars($this->element['description'], ENT_COMPAT, 'UTF-8'));
 			$onclick .= "';";
-			$onclick .= "document.getElementById('" . $id . "').setAttribute('class','width-45 untranslated');";
+			$onclick .= "document.getElementById('" . $id . "').setAttribute('class','width-100 untranslated " . $direction . "');";
 
 			$button   = '';
 			$button  .= '<i class="icon-reset hasTooltip return pointer" title="';
@@ -399,13 +441,13 @@ class KeyField extends FormField
 			/*$button2  = '<span style="width:5%;">'
 						. HTMLHelper::_('image', 'com_localise/icon-16-bing-gray.png', '', array('class' => 'pointer'), true) . '</span>';*/
 			$onkeyup  = "javascript:";
-			$onkeyup .= "if (this.getAttribute('value')=='') {this.setAttribute('class','width-45 untranslated');}
+			$onkeyup .= "if (this.getAttribute('value')=='') {this.setAttribute('class','width-100 untranslated " . $direction . "');}
 						else {if (this.getAttribute('value')=='"
 						. addslashes(htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8'))
-						. "') this.setAttribute('class','width-45 "
-						. $status
+						. "') this.setAttribute('class','width-100 "
+						. $status . " " . $direction
 						. "');"
-						. "else this.setAttribute('class','width-45 translated');}";
+						. "else this.setAttribute('class','width-100 translated " . $direction . "');}";
 
 			if ($status == 'extra')
 			{
@@ -420,11 +462,11 @@ class KeyField extends FormField
 				$button  = '';
 				$button .= '<i class="icon-joomla hasTooltip pointer-not-allowed" title="';
 				$button .= Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_KEY_TO_DELETE');
-				$button .= '" onclick="' . $onclick . '"></i>';
+				$button .= '" onclick="' . $onclick . '"></i><br>';
 
 				$input  = '';
 				$input .= '<textarea name="' . $this->name . '" id="';
-				$input .= $this->id . '"' . $readonly . ' onfocus="this.select()" class="width-45 pointer-not-allowed ';
+				$input .= $this->id . '"' . $readonly . ' onfocus="this.select()" class="width-100 pointer-not-allowed '. $direction . ' ';
 
 				if ($isextraindev)
 				{
@@ -438,7 +480,11 @@ class KeyField extends FormField
 				$input .= '" onkeyup="' . $onkeyup . '">' . $textvalue;
 				$input .= '</textarea>';
 
-				return $button . $button2 . $commented . $input;
+				$field_data->field_input     = $input;
+				$field_data->field_button    = $button;
+				$field_data->field_button2   = $button2;
+				$field_data->field_commented = $commented;
+				return $field_data;
 			}
 			elseif ($istextchange)
 			{
@@ -455,26 +501,35 @@ class KeyField extends FormField
 				$button  = '';
 				$button .= '<i class="icon-joomla hasTooltip pointer-not-allowed" title="';
 				$button .= $title;
-				$button .= '" onclick="' . $onclick . '"></i>';
+				$button .= '" onclick="' . $onclick . '"></i><br>';
 
 				$input  = '';
 				$input .= '<textarea name="' . $this->name . '" id="';
-				$input .= $this->id . '"' . $readonly . ' onfocus="this.select()" class="width-45 pointer-not-allowed ';
+				$input .= $this->id . '"' . $readonly . ' onfocus="this.select()" class="width-100 pointer-not-allowed '. $direction;
 				$input .= $class;
 				$input .= '" onkeyup="' . $onkeyup . '">' . $textvalue;
 				$input .= '</textarea>';
 
-				return $button . $button2 . $tip . $commented . $input;
+
+				$field_data->field_input     = $input;
+				$field_data->field_button    = $button;
+				$field_data->field_button2   = $button2;
+				$field_data->field_commented = $commented;
+				return $field_data;
 			}
 
 			$input  = '';
 			$input .= '<textarea name="' . $this->name . '" id="';
-			$input .= $this->id . '"' . $readonly . ' onfocus="this.select()" class="width-45 ';
+			$input .= $this->id . '"' . $readonly . ' onfocus="this.select()" class="width-100 '. $direction . ' ';
 			$input .= $status;
 			$input .= '" onkeyup="' . $onkeyup . '">' . $textvalue;
 			$input .= '</textarea>';
 
-			return $button . $button2 . $commented . $input;
+			$field_data->field_input     = $input;
+			$field_data->field_button    = $button;
+			$field_data->field_button2   = $button2;
+			$field_data->field_commented = $commented;
+			return $field_data;
 		}
 	}
 }

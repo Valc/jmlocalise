@@ -15,6 +15,8 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 
+use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
+
 HTMLHelper::_('behavior.formvalidator');
 HTMLHelper::_('stylesheet', 'com_localise/localise.css', ['version' => 'auto', 'relative' => true]);
 HTMLHelper::_('jquery.framework');
@@ -236,7 +238,7 @@ Factory::getDocument()->addScriptDeclaration("
 								</a>
 							</div>
 							<?php
-							if (count($sections) > 1) :
+								if (count($sections) > 1 && $filter == 'allkeys') :
 									echo '<div class="clearfix"></div>';
 									echo HTMLHelper::_('bootstrap.startAccordion', 'localise-translation-sliders');
 									$i = 0;
@@ -252,120 +254,48 @@ Factory::getDocument()->addScriptDeclaration("
 												<?php endif; ?>
 											</div>
 										<?php endif; ?>
-										<ul class="adminformlist">
-											<?php foreach ($this->form->getFieldset($name) as $field) : ?>
-												<?php
-													$showkey = 0;
-
-													if ($filter != 'allkeys' && !empty($keystofilter))
-													{
-														foreach ($keystofilter as $data => $ids)
-														{
-															foreach ($ids as $keytofilter)
-															{
-																$showkey = 0;
-																$pregkey = preg_quote('<strong>'. $keytofilter .'</strong>', '/<>');
-
-																if (preg_match("/$pregkey/", $field->label))
-																{
-																	$showkey = 1;
-																		break;
-																}
-															}
-														}
-
-														if ($showkey == '1')
-														{
-												?>
-															<li>
-																<?php echo $field->label; ?>
-																<?php echo $field->input; ?>
-															</li>
-														<?php
-														}
-														else
-														{
-														?>
-															<div style="display:none;">
-																<?php echo $field->label; ?>
-																<?php echo $field->input; ?>
-															</div>
-														<?php
-														}
-													}
-													elseif ($filter == 'allkeys')
-													{
-													?>
-														<li>
-															<?php echo $field->label; ?>
-															<?php echo $field->input; ?>
-														</li>
-													<?php
-													}
-													?>
-											<?php endforeach; ?>
-										</ul>
+										<div class="table-responsive"><table class="table table-hover"><tbody>
+											<?php foreach ($this->form->getFieldset($name) as $field) :
+												echo LocaliseHelper::getKeyHtmlOutput($field, $filter, $keystofilter);
+												endforeach;
+											?>
+										</tbody></table></div>
 									<?php
 									echo HTMLHelper::_('bootstrap.endSlide');
 									endforeach;
 									echo HTMLHelper::_('bootstrap.endAccordion');
 									?>
+								<?php elseif (count($sections) > 1 && $filter != 'allkeys') :
+									echo '<div class="clearfix"></div>';
+									foreach ($sections as $name => $fieldSet) :
+										if ($fieldSet->label == "COM_LOCALISE_TEXT_TRANSLATION_NOTINREFERENCE" && $filter == 'extra') : ?>
+											<div class="alert alert-info">
+												<span class="fas fa-info-circle info-line" aria-hidden="true"></span><span class="sr-only"><?php echo Text::_('INFO'); ?></span>
+												<?php if ($istranslation) : ?>
+													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_EXTRA_KEYS_IN_TRANSLATION'); ?>
+												<?php else : ?>
+													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_KEYS_TO_DELETE'); ?>
+												<?php endif; ?>
+											</div>
+										<?php endif; ?>
+										<div class="table-responsive"><table class="table table-hover"><tbody>
+											<?php foreach ($this->form->getFieldset($name) as $field) :
+												echo LocaliseHelper::getKeyHtmlOutput($field, $filter, $keystofilter);
+												endforeach;
+											?>
+										</tbody></table></div>
+									<?php
+									endforeach;
+									?>
 								<?php else : ?>
-									<ul class="adminformlist">
+									<div class="table-responsive"><table class="table table-hover"><tbody>
 										<?php $sections = array_keys($sections); ?>
-										<?php foreach ($this->form->getFieldset($sections[0]) as $field) : ?>
-										<?php
-											$showkey = 0;
-
-											if ($filter != 'allkeys' && !empty($keystofilter))
-											{
-												foreach ($keystofilter as $data  => $ids)
-												{
-													foreach ($ids as $keytofilter)
-													{
-														$showkey = 0;
-														$pregkey = preg_quote('<strong>'.$keytofilter.'</strong>', '/<>');
-
-														if (preg_match("/$pregkey/", $field->label))
-														{
-															$showkey = 1;
-															break;
-														}
-													}
-												}
-
-												if ($showkey == '1')
-												{
-												?>
-													<li>
-														<?php echo $field->label; ?>
-														<?php echo $field->input; ?>
-													</li>
-												<?php
-												}
-												else
-												{
-												?>
-													<div style="display:none;">
-														<?php echo $field->label; ?>
-														<?php echo $field->input; ?>
-													</div>
-												<?php
-												}
-											}
-											elseif ($filter == 'allkeys')
-											{
-											?>
-												<li>
-													<?php echo $field->label; ?>
-													<?php echo $field->input; ?>
-												</li>
-											<?php
-											}
-											?>
-										<?php endforeach; ?>
-									</ul>
-								<?php endif;?>
+										<?php foreach ($this->form->getFieldset($sections[0]) as $field) :
+											echo LocaliseHelper::getKeyHtmlOutput($field, $filter, $keystofilter);
+											endforeach;
+										?>
+									</tbody></table></div>
+								<?php endif; ?>
 						</div>
 
 					<?php echo HTMLHelper::_('uitab.endTab'); ?>

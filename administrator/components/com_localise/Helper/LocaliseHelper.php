@@ -2626,6 +2626,118 @@ abstract class LocaliseHelper
 		$double_spaces = '<span class="red-space"><font color="red">XX</font></span>';
 		$text_changes = str_replace('LOCALISEDOUBLESPACES', $double_spaces, $text_changes);
 
-	return $text_changes;
+		return $text_changes;
+	}
+
+	public static function getKeyHtmlOutput(&$field, &$filter, &$keystofilter)
+	{
+		$html_output = '';
+		$showkey     = 0;
+
+		if ($filter == 'allkeys' && strtoupper($field->type) == 'SPACER')
+		{
+			$html_output .= '<tr>';
+			$html_output .= '<th colspan="3">';
+			$html_output .= $field->label;
+			$html_output .= '</th>';
+			$html_output .= '</tr>';
+
+			return $html_output;;
+		}
+
+		if ($filter != 'allkeys' && !empty($keystofilter) && strtoupper($field->type) == 'KEY')
+		{
+			foreach ($keystofilter as $data => $ids)
+			{
+				foreach ($ids as $keytofilter)
+				{
+					$showkey = 0;
+					$pregkey = preg_quote('<strong>'. $keytofilter .'</strong>', '/<>');
+
+					if (preg_match("/$pregkey/", $field->label->field_label))
+					{
+						$showkey = 1;
+						break;
+					}
+				}
+			}
+
+			if ($showkey == '1')
+			{
+				$html_output .= '<tr>';
+				$html_output .= '<th class="width-45">';
+				$html_output .= '<div class="width-100">';
+				$html_output .= $field->label->field_label;
+				$html_output .= $field->label->field_checkbox;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '<th class="width-5">';
+				$html_output .= '<div class="width-100">';
+				$html_output .=  $field->input->field_button;
+				$html_output .=  $field->input->field_button2;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '<th class="width-45">';
+				$html_output .= '<div class="width-100">';
+				$html_output .=  $field->input->field_commented;
+				$html_output .=  $field->input->field_input;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '</tr>';
+			}
+			else
+			{
+				$html_output .= '<div style="display:none;">';
+				$html_output .= '<tr style="display:none;">';
+				$html_output .= '<th class="width-45">';
+				$html_output .= '<div class="width-100">';
+				$html_output .= $field->label->field_label;
+				$html_output .= $field->label->field_checkbox;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '<th class="width-5">';
+				$html_output .= '<div class="width-100">';
+				$html_output .=  $field->input->field_button;
+				$html_output .=  $field->input->field_button2;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '<th class="width-45">';
+				$html_output .= '<div class="width-100">';
+				$html_output .=  $field->input->field_commented;
+				$html_output .=  $field->input->field_input;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '</tr>';
+				$html_output .= '</div>';
+			}
+		}
+		elseif ($filter == 'allkeys')
+		{
+			if (strtoupper($field->type) == 'KEY')
+			{
+				$html_output .= '<tr>';
+				$html_output .= '<th class="width-45">';
+				$html_output .= '<div class="width-100">';
+				$html_output .= $field->label->field_label;
+				$html_output .= $field->label->field_checkbox;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '<th class="width-5">';
+				$html_output .= '<div class="width-100">';
+				$html_output .=  $field->input->field_button;
+				$html_output .=  $field->input->field_button2;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '<th class="width-45">';
+				$html_output .= '<div class="width-100">';
+				$html_output .=  $field->input->field_commented;
+				$html_output .=  $field->input->field_input;
+				$html_output .= '</div>';
+				$html_output .= '</th>';
+				$html_output .= '</tr>';
+			}
+		}
+
+		return $html_output;
 	}
 }
