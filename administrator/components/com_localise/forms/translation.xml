@@ -88,6 +88,9 @@
 			name="target_text_changes"
 			type="hidden" />
 		<field
+			name="falsepositive"
+			type="hidden" />
+		<field
 			name="notinref"
 			type="hidden" />
 		<field

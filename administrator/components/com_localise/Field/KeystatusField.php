@@ -74,6 +74,21 @@ class KeystatusField extends ListField
 		$options[] = HTMLHelper::_('select.option', 'textchangedkeys', Text::_('COM_LOCALISE_TEXT_TRANSLATION_TEXTCHANGED'),
 						array('option.attr' => 'attributes', 'attr' => 'class="textchanged"')
 						);
+		$options[] = HTMLHelper::_('select.option', 'pluralkeys', Text::_('COM_LOCALISE_TEXT_TRANSLATION_PLURAL'),
+						array('option.attr' => 'attributes', 'attr' => 'class="plural"')
+						);
+		$options[] = HTMLHelper::_('select.option', 'renamedkeys', Text::_('COM_LOCALISE_TEXT_TRANSLATION_RENAMED'),
+						array('option.attr' => 'attributes', 'attr' => 'class="renamed"')
+						);
+		$options[] = HTMLHelper::_('select.option', 'deletedkeys', Text::_('COM_LOCALISE_TEXT_TRANSLATION_DELETED'),
+						array('option.attr' => 'attributes', 'attr' => 'class="deleted"')
+						);
+		$options[] = HTMLHelper::_('select.option', 'extrakeys', Text::_('COM_LOCALISE_TEXT_TRANSLATION_EXTRA'),
+						array('option.attr' => 'attributes', 'attr' => 'class="extra"')
+						);
+		$options[] = HTMLHelper::_('select.option', 'issuedkeys', Text::_('COM_LOCALISE_TEXT_TRANSLATION_ISSUED'),
+						array('option.attr' => 'attributes', 'attr' => 'class="issued"')
+						);
 
 		return $options;
 	}

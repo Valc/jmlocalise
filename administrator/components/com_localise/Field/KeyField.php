@@ -11,12 +11,14 @@ namespace Joomla\Component\Localise\Administrator\Field;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
 use Joomla\Registry\Registry;
 
+use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
 /**
  * Form Field Key class.
  *
@@ -43,27 +45,147 @@ class KeyField extends FormField
 	 */
 	protected function getLabel()
 	{
-		$field_data                 = new \JObject;
-		$field_data->field_label    = '';
-		$field_data->field_checkbox = '';
+		$field_data                         = new \JObject;
+		$field_data->field_key              = (string) $this->element['name'];
+		$field_data->field_details          = '';
+		$field_data->field_label            = '';
+		$field_data->field_desc             = '';
+		$field_data->field_checkbox         = '';
+		$field_data->textchanges_checkbox   = '';
+		$field_data->falsepositive_checkbox = '';
+		$field_data->is_textchange          = (int) $this->element['istextchange'];
+		$field_data->is_issued              = (int) $this->element['isissued'];
+		$field_data->targetlang             = (string) $this->element['targetlang'];
+		$field_data->engb_string            = (string) $this->element['engb_string'];
+		$field_data->ttms_string            = (string) $this->element['ttms_string'];
+		$field_data->issue_details          = (string) $this->element['issue_details'];
 
-		$reflang = (string) $this->element['reflang'];
-		$is_rtl  = (int) $this->element['reflang_is_rtl'];
+		$client        = (string) $this->element['client'];
+		$reflang       = (string) $this->element['reflang'];
+		$targetlang    = (string) $this->element['targetlang'];
+		$filename      = (string) $this->element['filename'];
+		$key           = (string) $this->element['name'];
+		$is_rtl        = (int)    $this->element['reflang_is_rtl'];
+		$is_rtl_target = (int)    $this->element['targetlang_is_rtl'];
 
-		$direction = "ltr";
+		$direction  = "ltr";
+		$direction2 = "ltr";
 
 		if ($is_rtl == '1')
 		{
 			$direction = "rtl";
 		}
 
+		if ($is_rtl_target == '1')
+		{
+			$direction2 = "rtl";
+		}
+
 		// Set the class for the label.
 		$class         = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
 
-		$istranslation = (int) $this->element['istranslation'];
-		$status        = (string) $this->element['status'];
-		$istextchange  = (int) $this->element['istextchange'];
-		$is_comment    = false;
+		$istranslation   = (int) $this->element['istranslation'];
+		$status          = (string) $this->element['status'];
+		$istextchange    = (int) $field_data->is_textchange;
+		$isissued        = (int) $field_data->is_issued;
+		$is_comment      = false;
+		$is_new          = (string) $this->element['isextraindev'];
+		$is_plural       = (string) $this->element['isplural'];
+		$is_root         = (string) $this->element['isroot'];
+		$is_personalised = (string) $this->element['ispersonalised'];
+		$is_duplicated   = (string) $this->element['isduplicated'];
+
+		if ($is_new == 1)
+		{
+			$field_data->field_details .= '<span class="badge bg-success">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_NEW_AT_TAB') . '</span>';
+		}
+
+		// Setting badge priority for regular plural cases
+		if ($is_root == 1)
+		{
+			$field_data->field_details .= '<span class="badge bg-primary">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_ROOT_AT_TAB') . '</span>';
+		}
+		else if ($is_plural == 1)
+		{
+			$field_data->field_details .= '<span class="badge bg-info">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_PLURAL_AT_TAB') . '</span>';
+
+			if ($is_duplicated == 1)
+			{
+				$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_DUPLICATED_AT_TAB') . '</span>';
+			}
+		}
+
+		if ($isissued == '1' && $istranslation == '1')
+		{
+			$db_data                    = new \JObject;
+			$db_data->client            = $client;
+			$db_data->reflang           = $reflang;
+			$db_data->targetlang        = $targetlang;
+			$db_data->filename          = $filename;
+			$db_data->key               = $key;
+			$db_data->reflang_string    = base64_encode($this->element['description']);
+			$db_data->targetlang_string = base64_encode($this->value);
+
+			$stored_case = self::searchFalsePositive($db_data);		
+	
+			if (isset($stored_case->is_false_positive))
+			{
+				if ($stored_case->is_false_positive == '1')
+				{
+					$falsepositive_checked = ' checked="checked" ';
+				}
+				else
+				{
+					$falsepositive_checked = '';
+				}
+			}
+			else
+			{
+				$falsepositive_checked = '';
+			}
+
+			$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_ISSUED_AT_TAB') . '</span>';
+			$field_data->engb_string    = '<div class="engb-string ' . $direction . '">' . $this->element['engb_string'] . '</div>';
+			$field_data->ttms_string    = '<div class="ttms-string ' . $direction2 . '">' . $this->element['ttms_string'] . '</div>';
+			$field_data->issue_details  = '<div class="details-string ' . $direction . '">' . $this->element['issue_details'] . '</div>';
+
+			$label_desc  = '';
+			$label_desc .= '<div><strong>';
+			$label_desc .= $this->element['name'];
+			$label_desc .= '</strong><br><label class="key-label normal-text ' . $direction . '">';
+			$label_desc .= htmlspecialchars($this->element['description'], ENT_COMPAT, 'UTF-8');
+			$label_desc .= '</label></div>';
+
+			$falsepositive_key         = (string) $this->element['label'];
+			$falsepositive_checkbox_id = "falsepositive_checkbox_id_" . str_replace(array("_", ":"), "", $this->element['name']);
+
+			$falsepositive_onclick     = "javascript:";
+			$falsepositive_onclick    .= "var checked_values = document.getElementsByName('jform[falsepositive]');
+									var form           = $('#localise-translation-form');
+
+									// Set to the hidden form field 'falsepositive' the value of the selected checkboxes.
+									form.find('input[name=falsepositive]').val(checked_values);
+									";
+
+			$title = Text::_('COM_LOCALISE_FALSEPOSITIVE');
+			$tip   = $title;
+
+			$falsepositive_checkbox  = '';
+			$falsepositive_checkbox .= '<div><strong>' . $title . '</strong><input style=""';
+			$falsepositive_checkbox .= ' title="' . $tip . '"';
+			$falsepositive_checkbox .= ' id="' . $falsepositive_checkbox_id . '"';
+			$falsepositive_checkbox .= ' type="checkbox" ';
+			$falsepositive_checkbox .= ' name="jform[falsepositive][]"';
+			$falsepositive_checkbox .= ' value="' . $this->element['name'] . '"';
+			$falsepositive_checkbox .= ' onclick="';
+			$falsepositive_checkbox .= $falsepositive_onclick;
+			$falsepositive_checkbox .= '" class="' . $class . '"';
+			$falsepositive_checkbox .= 	$falsepositive_checked;
+			$falsepositive_checkbox .= '></input></div>';
+
+			$field_data->field_desc             = $label_desc;
+			$field_data->falsepositive_checkbox = '<div class="float-end">' . $falsepositive_checkbox . '</div>';
+		}
 
 		if ($istextchange == '1')
 		{
@@ -95,6 +217,15 @@ class KeyField extends FormField
 			{
 				$title = Text::_('COM_LOCALISE_REVISED');
 				$tip   = $title;
+
+				$label_desc  = '';
+				$label_desc .= '<div><strong>';
+				$label_desc .= $this->element['name'];
+				$label_desc .= '</strong><br><label class="key-label normal-text ' . $direction . '">';
+				$label_desc .= htmlspecialchars($this->element['sourcetext'], ENT_COMPAT, 'UTF-8');
+				$label_desc .= '</label></div>';
+
+				$field_data->field_desc = $label_desc;
 			}
 			else
 			{
@@ -145,14 +276,14 @@ class KeyField extends FormField
 			$label .= '</label></div>';
 
 			$field_data->field_label = $label;
-			$field_data->field_checkbox = '<div class="float-end">' . $textchanges_checkbox . '</div>';
+			$field_data->textchanges_checkbox = '<div class="float-end">' . $textchanges_checkbox . '</div>';
 
 			return $field_data;
 		}
 		else if ($status == 'extra' && $istranslation)
 		{
 			$class                = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
-			$tip                  = Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_NOTINREF');
+			$tip                  = Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_' . strtoupper($status));
 			$title                = Text::_('COM_LOCALISE_DELETE');
 			$notinref_key         = (string) $this->element['label'];
 			$notinref_checkbox_id = "notinref_checkbox_id_" . str_replace(array("_", ":"), "", $this->element['name']);
@@ -185,6 +316,142 @@ class KeyField extends FormField
 			$label .= '" class="' . $class . '">';
 			$label .= $this->element['label'];
 			$label .= '</label></div>';
+
+			$field_data->field_details .= '<span class="badge bg-info">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($status)) . '</span>';
+			$field_data->field_label    = $label;
+			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
+
+			return $field_data;
+		}
+		else if ($status == 'deleted' && $istranslation)
+		{
+			$class                = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
+			$tip                  = Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_' . strtoupper($status));
+			$title                = Text::_('COM_LOCALISE_DELETE');
+			$notinref_key         = (string) $this->element['label'];
+			$notinref_checkbox_id = "notinref_checkbox_id_" . str_replace(array("_", ":"), "", $this->element['name']);
+
+			$notinref_onclick     = "javascript:";
+			$notinref_onclick    .= "var checked_values = document.getElementsByName('jform[notinref]');
+									var form           = $('#localise-translation-form');
+
+									// Set to the hidden form field 'notinref' the value of the selected checkboxes.
+									form.find('input[name=notinref]').val(checked_values);
+									";
+
+			$notinref_checkbox  = '';
+			$notinref_checkbox .= '<div><strong>' . $title . '</strong><input style=""';
+			$notinref_checkbox .= ' title="' . $tip . '"';
+			$notinref_checkbox .= ' id="' . $notinref_checkbox_id . '"';
+			$notinref_checkbox .= ' type="checkbox" ';
+			$notinref_checkbox .= ' name="jform[notinref][]"';
+			$notinref_checkbox .= ' value="' . $this->element['name'] . '"';
+			$notinref_checkbox .= ' onclick="';
+			$notinref_checkbox .= $notinref_onclick;
+			$notinref_checkbox .= '" class="' . $class . '"';
+			$notinref_checkbox .= '></input></div>';
+
+			$label  = '';
+			$label .= '<div><label id="';
+			$label .= $this->id;
+			$label .= '-lbl" for="';
+			$label .= $this->id;
+			$label .= '" class="' . $class . '">';
+			$label .= $this->element['label'];
+			$label .= '</label></div>';
+
+			$field_data->field_details .= '<span class="badge bg-danger">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($status)) . '</span>';
+			$field_data->field_label    = $label;
+			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
+
+			return $field_data;
+		}
+		else if ($status == 'renamed' && $istranslation)
+		{
+			$class                = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
+			$tip                  = Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_' . strtoupper($status));
+			$title                = Text::_('COM_LOCALISE_DELETE');
+			$notinref_key         = (string) $this->element['label'];
+			$notinref_checkbox_id = "notinref_checkbox_id_" . str_replace(array("_", ":"), "", $this->element['name']);
+
+			$notinref_onclick     = "javascript:";
+			$notinref_onclick    .= "var checked_values = document.getElementsByName('jform[notinref]');
+									var form           = $('#localise-translation-form');
+
+									// Set to the hidden form field 'notinref' the value of the selected checkboxes.
+									form.find('input[name=notinref]').val(checked_values);
+									";
+
+			$notinref_checkbox  = '';
+			$notinref_checkbox .= '<div><strong>' . $title . '</strong><input style=""';
+			$notinref_checkbox .= ' title="' . $tip . '"';
+			$notinref_checkbox .= ' id="' . $notinref_checkbox_id . '"';
+			$notinref_checkbox .= ' type="checkbox" ';
+			$notinref_checkbox .= ' name="jform[notinref][]"';
+			$notinref_checkbox .= ' value="' . $this->element['name'] . '"';
+			$notinref_checkbox .= ' onclick="';
+			$notinref_checkbox .= $notinref_onclick;
+			$notinref_checkbox .= '" class="' . $class . '"';
+			$notinref_checkbox .= '></input></div>';
+
+			$label  = '';
+			$label .= '<div><label id="';
+			$label .= $this->id;
+			$label .= '-lbl" for="';
+			$label .= $this->id;
+			$label .= '" class="' . $class . '">';
+			$label .= $this->element['label'];
+			$label .= '</label></div>';
+
+			$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($status)) . '</span>';
+			$field_data->field_label    = $label;
+			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
+
+			return $field_data;
+		}
+		else if ($status == 'personalised' && $istranslation)
+		{
+			$class                = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
+			$tip                  = Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_' . strtoupper($status));
+			$title                = Text::_('COM_LOCALISE_DELETE');
+			$notinref_key         = (string) $this->element['label'];
+			$notinref_checkbox_id = "notinref_checkbox_id_" . str_replace(array("_", ":"), "", $this->element['name']);
+
+			$notinref_onclick     = "javascript:";
+			$notinref_onclick    .= "var checked_values = document.getElementsByName('jform[notinref]');
+									var form           = $('#localise-translation-form');
+
+									// Set to the hidden form field 'notinref' the value of the selected checkboxes.
+									form.find('input[name=notinref]').val(checked_values);
+									";
+
+			$notinref_checkbox  = '';
+			$notinref_checkbox .= '<div><strong>' . $title . '</strong><input style=""';
+			$notinref_checkbox .= ' title="' . $tip . '"';
+			$notinref_checkbox .= ' id="' . $notinref_checkbox_id . '"';
+			$notinref_checkbox .= ' type="checkbox" ';
+			$notinref_checkbox .= ' name="jform[notinref][]"';
+			$notinref_checkbox .= ' value="' . $this->element['name'] . '"';
+			$notinref_checkbox .= ' onclick="';
+			$notinref_checkbox .= $notinref_onclick;
+			$notinref_checkbox .= '" class="' . $class . '"';
+			$notinref_checkbox .= '></input></div>';
+
+			$label  = '';
+			$label .= '<div><label id="';
+			$label .= $this->id;
+			$label .= '-lbl" for="';
+			$label .= $this->id;
+			$label .= '" class="' . $class . '">';
+			$label .= $this->element['label'];
+			$label .= '</label></div>';
+
+			$field_data->field_details .= '<span class="badge bg-info">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($status)) . '</span>';
+
+			if ($is_duplicated == 1)
+			{
+				$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_DUPLICATED_AT_TAB') . '</span>';
+			}
 
 			$field_data->field_label    = $label;
 			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
@@ -294,7 +561,7 @@ class KeyField extends FormField
 
 			$onfocus = "";
 
-			if ($status == 'extra')
+			if ($status == 'extra' || $status == 'deleted' || $status == 'renamed' || $status == 'personalised')
 			{
 				$class .= " width-100 $status";
 				$input  = '';
@@ -326,6 +593,7 @@ class KeyField extends FormField
 				$field_data->field_button    = $button;
 				$field_data->field_button2   = $button2;
 				$field_data->field_commented = $commented;
+
 				return $field_data;
 			}
 			else
@@ -400,6 +668,7 @@ class KeyField extends FormField
 			$field_data->field_button    = $button;
 			$field_data->field_button2   = $button2;
 			$field_data->field_commented = $commented;
+
 			return $field_data;
 		}
 		else
@@ -482,6 +751,7 @@ class KeyField extends FormField
 				$field_data->field_button    = $button;
 				$field_data->field_button2   = $button2;
 				$field_data->field_commented = $commented;
+
 				return $field_data;
 			}
 			elseif ($istextchange)
@@ -491,7 +761,9 @@ class KeyField extends FormField
 				$class    .= ' disabled ';
 				$textvalue = htmlspecialchars($this->element['description'], ENT_COMPAT, 'UTF-8');
 				$title     = '';
-				$tip       = '<div> <span class="badge bg-warning text-dark grammar">' . Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_GRAMMAR_CASE') . '</span></div>';
+				$tip       = '<div> <span class="badge bg-warning text-dark grammar">'
+					. Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_GRAMMAR_CASE')
+					. '</span></div>';
 
 				// Is read only, so no changes.
 				$onkeyup = "";
@@ -508,11 +780,11 @@ class KeyField extends FormField
 				$input .= '" onkeyup="' . $onkeyup . '">' . $textvalue;
 				$input .= '</textarea>';
 
-
 				$field_data->field_input     = $input;
 				$field_data->field_button    = $button;
 				$field_data->field_button2   = $button2;
 				$field_data->field_commented = $commented;
+
 				return $field_data;
 			}
 
@@ -527,7 +799,79 @@ class KeyField extends FormField
 			$field_data->field_button    = $button;
 			$field_data->field_button2   = $button2;
 			$field_data->field_commented = $commented;
+
 			return $field_data;
 		}
 	}
+
+	/**
+	 * Search false positives for issued strings by selected data
+	 *
+	 * @param   object $db_data  The required data to search a false positive case.
+	 *
+	 * @return object
+	 *
+	 */
+	protected static function searchFalsePositive(&$db_data)
+	{
+		if (!is_object($db_data))
+		{
+			return false;
+		}
+
+		$client            = $db_data->client;
+		$reflang           = $db_data->reflang;
+		$targetlang        = $db_data->targetlang;
+		$filename          = $db_data->filename;
+		$key               = $db_data->key;
+		$reflang_string    = $db_data->reflang_string;
+		$targetlang_string = $db_data->targetlang_string;
+
+		$db    = Factory::getDbo();
+		$query = $db->getQuery(true);
+
+		$query->select(
+				array(
+					$db->quoteName('id'),
+					$db->quoteName('client'),
+					$db->quoteName('reflang'),
+					$db->quoteName('targetlang'),
+					$db->quoteName('filename'),
+					$db->quoteName('is_false_positive'),
+					$db->quoteName('key'),
+					$db->quoteName('reflang_string'),
+					$db->quoteName('targetlang_string')
+				)
+		);
+
+		$query->from($db->quoteName('#__localise_false_positives'));
+		$query->where($db->quoteName('client')." = :client");
+		$query->where($db->quoteName('reflang')." = :reflang");
+		$query->where($db->quoteName('targetlang')." = :targetlang");
+		$query->where($db->quoteName('filename')." = :filename");
+		$query->where($db->quoteName('key')." = :key");
+		$query->where($db->quoteName('reflang_string')." = :reflang_string");
+		$query->where($db->quoteName('targetlang_string')." = :targetlang_string");
+		$query->bind(':client', $client);
+		$query->bind(':reflang', $reflang);
+		$query->bind(':targetlang', $targetlang);
+		$query->bind(':filename', $filename);
+		$query->bind(':key', $key);
+		$query->bind(':reflang_string', $reflang_string);
+		$query->bind(':targetlang_string', $targetlang_string);
+
+		$db->setQuery($query);
+
+		$result = $db->loadObject();
+
+		if (! is_null($result) && ! empty($result) && $result)
+		{
+			return $result;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 }

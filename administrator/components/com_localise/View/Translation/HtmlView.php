@@ -81,7 +81,10 @@ class HtmlView extends BaseHtmlView
 		$checkedOut    = !($this->item->checked_out == 0 || $this->item->checked_out == $user->get('id'));
 		$complete      = (int) ComponentHelper::getParams('com_localise')->get('complete', 0);
 		$istranslation = $this->item->istranslation;
+		$has_renamed   = $this->item->renamed > 0 ? true : false;
+		$has_deleted   = $this->item->deleted > 0 ? true : false;
 		$has_notinref  = $this->item->extra > 0 ? true : false;
+		$has_unchecked = $this->item->unchecked > 0 ? true : false;
 
 		$toolbar = Toolbar::getInstance('toolbar');
 
@@ -107,9 +110,14 @@ class HtmlView extends BaseHtmlView
 			{
 				$message = Text::_('COM_LOCALISE_CONFIRM_TRANSLATION_SAVE');
 
-				if ($has_notinref && $istranslation)
+				if (($has_notinref || $has_deleted || $has_renamed) && $istranslation)
 				{
 					$message .= '\n\n' . Text::_('COM_LOCALISE_CONFIRM_TRANSLATION_SAVE_NOTINREF');
+				}
+
+				if ($has_unchecked && $istranslation)
+				{
+					$message .= '\n\n' . Text::_('COM_LOCALISE_CONFIRM_TRANSLATION_SAVE_ISSUED');
 				}
 
 				$toolbar->confirmButton('apply')

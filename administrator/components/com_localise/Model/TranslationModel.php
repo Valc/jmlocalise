@@ -22,6 +22,7 @@ use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\Filesystem\Folder;
+use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Client\ClientHelper;
@@ -200,11 +201,31 @@ class TranslationModel extends AdminModel
 				$this->setState('translation.unchangedkeys', array());
 				$this->setState('translation.textchangedkeys', array());
 				$this->setState('translation.revisedchanges', array());
+				$this->setState('translation.extrakeys', array());
+				$this->setState('translation.deletedkeys', array());
+				$this->setState('translation.renamedkeys', array());
+				$this->setState('translation.pluralkeys', array());
+				$this->setState('translation.rootkeys', array());
+				$this->setState('translation.regularkeys', array());
+				$this->setState('translation.personalisedkeys', array());
+				$this->setState('translation.duplicatedkeys', array());
+				$this->setState('translation.issuedkeys', array());
+				$this->setState('translation.issueddata', array());
 				$this->setState('translation.developdata', array());
 
 				$translatedkeys   = $this->getState('translation.translatedkeys');
 				$untranslatedkeys = $this->getState('translation.untranslatedkeys');
 				$unchangedkeys    = $this->getState('translation.unchangedkeys');
+				$extrakeys        = $this->getState('translation.extrakeys');
+				$deletedkeys      = $this->getState('translation.deletedkeys');
+				$renamedkeys      = $this->getState('translation.renamedkeys');
+				$pluralkeys       = $this->getState('translation.pluralkeys');
+				$rootkeys         = $this->getState('translation.rootkeys');
+				$regularkeys      = $this->getState('translation.regularkeys');
+				$personalisedkeys = $this->getState('translation.personalisedkeys');
+				$duplicatedkeys   = $this->getState('translation.duplicatedkeys');
+				$issuedkeys       = $this->getState('translation.issuedkeys');
+				$issueddata       = $this->getState('translation.issueddata');
 				$textchangedkeys  = $this->getState('translation.textchangedkeys');
 				$revisedchanges   = $this->getState('translation.revisedchanges');
 				$developdata      = $this->getState('translation.developdata');
@@ -232,13 +253,28 @@ class TranslationModel extends AdminModel
 										'unchangedkeys'       => (array) $unchangedkeys,
 										'textchangedkeys'     => (array) $textchangedkeys,
 										'revisedchanges'      => (array) $revisedchanges,
+										'extrakeys'           => (array) $extrakeys,
+										'deletedkeys'         => (array) $deletedkeys,
+										'renamedkeys'         => (array) $renamedkeys,
+										'pluralkeys'          => (array) $pluralkeys,
+										'rootkeys'            => (array) $rootkeys,
+										'regularkeys'         => (array) $regularkeys,
+										'personalisedkeys'    => (array) $personalisedkeys,
+										'duplicatedkeys'      => (array) $duplicatedkeys,
+										'issuedkeys'          => (array) $issuedkeys,
+										'issueddata'          => (array) $issueddata,
 										'unrevised'           => 0,
+										'unchecked'           => 0,
 										'translatednews'      => 0,
 										'unchangednews'       => 0,
 										'translated'          => 0,
 										'untranslated'        => 0,
 										'unchanged'           => 0,
 										'extra'               => 0,
+										'deleted'             => 0,
+										'renamed'             => 0,
+										'plural'              => 0,
+										'issued'              => 0,
 										'total'               => 0,
 										'linespath'           => 0,
 										'linesrefpath'        => 0,
@@ -570,11 +606,17 @@ class TranslationModel extends AdminModel
 						$developdata      = LocaliseHelper::getDevelopchanges($info, $refsections, $develop_sections);
 						$developdata['develop_file_path'] = '';
 
-						if ($developdata['extra_keys']['amount'] > 0  || $developdata['text_changes']['amount'] > 0)
+						// Getting the deteted and renamed en-GB keys in development.
+						$enGB_deletedkeys = $developdata['deleted_keys'];
+						$enGB_renamedkeys = $developdata['renamed_keys'];
+
+						// Handling the extra en-GB keys ('New' ones) in development
+						// and the changed strings between the seleted en-GB release and branch.
+						if ($developdata['new_keys']['amount'] > 0  || $developdata['text_changes']['amount'] > 0)
 						{
-							if ($developdata['extra_keys']['amount'] > 0)
+							if ($developdata['new_keys']['amount'] > 0)
 							{
-								$new_keys = $developdata['extra_keys']['keys'];
+								$new_keys = $developdata['new_keys']['keys'];
 							}
 
 							if ($developdata['text_changes']['amount'] > 0)
@@ -642,11 +684,57 @@ class TranslationModel extends AdminModel
 						}
 					}
 
+					$client                 = $this->getState('translation.client');
+					$stored_false_positives = false;
+
+					if ($reftag == 'en-GB' && $istranslation == 1)
+					{
+						$db_data = new \JObject;
+						$db_data->client     = $client;
+						$db_data->reflang    = $reftag;
+						$db_data->targetlang = $tag;
+						$db_data->filename   = $ref_file;
+
+						$stored_false_positives = LocaliseHelper::getFalsePositives($db_data);
+
+						// Getting the plural suffixes for the selected language to translate.
+						$language_instance = Language::getInstance($tag);
+						$suffixes_data     = LocaliseHelper::getPluralSuffixes($language_instance, $counter = 100);
+					}
+
 					if (!empty($refsections['keys']))
 					{
+						$ref_keys_only = array_keys($refsections['keys']);
+
 						foreach ($refsections['keys'] as $key => $string)
 						{
 							$this->item->total++;
+
+							if ($reftag == 'en-GB' && $istranslation == 1)
+							{
+								$key_case = LocaliseHelper::isEngbPlural($key, $ref_keys_only);
+
+								if (isset($key_case->is_plural) && $key_case->is_plural == true)
+								{
+									if (!in_array($key_case->root_key, $rootkeys))
+									{
+										$rootkeys[]   = $key_case->root_key;
+										$pluralkeys[] = $key_case->root_key;
+										$this->item->plural++;
+									}
+
+									if (!in_array($key, $pluralkeys))
+									{
+										$pluralkeys[] = $key;
+										$this->item->plural++;
+									}
+
+									if (!in_array($key, $regularkeys))
+									{
+										$regularkeys[] = $key;
+									}
+								}
+							}
 
 							if (!empty($sections['keys']) && array_key_exists($key, $sections['keys']) && $sections['keys'][$key] != '')
 							{
@@ -661,11 +749,135 @@ class TranslationModel extends AdminModel
 									{
 										$this->item->translatednews++;
 										$translatedkeys[] = $key;
+
+										// Parse issued strings when its a translation with the en-GB language as reference
+										if ($reftag == 'en-GB')
+										{
+											// This is not an changed string to revise or it is a changed string checked as revised.
+											if (!isset($revisedchanges[$key]) || (array_key_exists($key, $revisedchanges) && $revisedchanges[$key] == 1))
+											{
+												$parsed_string = LocaliseHelper::parseStringIssues($string, $sections['keys'][$key]);
+
+												if ($parsed_string->is_issued == true)
+												{
+													$this->item->issued++;
+													$issuedkeys[] = $key;
+
+													if (!in_array($key, $issueddata))
+													{
+														$issueddata[$key] = $parsed_string;
+
+														$issues_data = new \JObject;
+														$issues_data->client            = $client;
+														$issues_data->reflang           = $reftag;
+														$issues_data->targetlang        = $tag;
+														$issues_data->filename          = $ref_file;
+														$issues_data->key               = $key;
+														$issues_data->is_false_positive = '0';
+														$issues_data->reflang_string    = base64_encode($string);
+														$issues_data->targetlang_string = base64_encode($sections['keys'][$key]);
+
+														if (isset($stored_false_positives[$key]))
+														{
+															$stored_reflang_string    = $stored_false_positives[$key]->reflang_string;
+															$stored_targetlang_string = $stored_false_positives[$key]->targetlang_string;
+
+															$current_reflang_string    = $issues_data->reflang_string;
+															$current_targetlang_string = $issues_data->targetlang_string;
+
+															if (($stored_reflang_string != $current_reflang_string)
+																|| ($stored_targetlang_string != $current_targetlang_string))
+															{
+																$issues_data->id = $stored_false_positives[$key]->id;
+
+																$update = LocaliseHelper::updateFalsePositive($issues_data);
+
+																$this->item->unchecked++;
+															}
+															else if ($stored_false_positives[$key]->is_false_positive == '0')
+															{
+																$this->item->unchecked++;
+															}
+														}
+														else
+														{
+															$issues_data->id = null;
+
+															$save = LocaliseHelper::saveFalsePositive($issues_data);
+
+															$this->item->unchecked++;
+														}
+													}
+												}
+											}
+										}
 									}
 									else
 									{
 										$this->item->translated++;
 										$translatedkeys[] = $key;
+
+										// Parse issued strings when its a translation with the en-GB language as reference
+										if ($reftag == 'en-GB')
+										{
+											// This is not an changed string to revise or it is a changed string checked as revised with issues.
+											if (!isset($revisedchanges[$key]) || (array_key_exists($key, $revisedchanges) && $revisedchanges[$key] == 1))
+											{
+												$parsed_string = LocaliseHelper::parseStringIssues($string, $sections['keys'][$key]);
+
+												if ($parsed_string->is_issued == true)
+												{
+													$this->item->issued++;
+													$issuedkeys[] = $key;
+
+													if (!in_array($key, $issueddata))
+													{
+														$issueddata[$key] = $parsed_string;
+
+														$issues_data = new \JObject;
+														$issues_data->client            = $client;
+														$issues_data->reflang           = $reftag;
+														$issues_data->targetlang        = $tag;
+														$issues_data->filename          = $ref_file;
+														$issues_data->key               = $key;
+														$issues_data->is_false_positive = '0';
+														$issues_data->reflang_string    = base64_encode($string);
+														$issues_data->targetlang_string = base64_encode($sections['keys'][$key]);
+
+														if (isset($stored_false_positives[$key]))
+														{
+															$stored_reflang_string    = $stored_false_positives[$key]->reflang_string;
+															$stored_targetlang_string = $stored_false_positives[$key]->targetlang_string;
+
+															$current_reflang_string    = $issues_data->reflang_string;
+															$current_targetlang_string = $issues_data->targetlang_string;
+
+															if (($stored_reflang_string != $current_reflang_string)
+																|| ($stored_targetlang_string != $current_targetlang_string))
+															{
+																$issues_data->id = $stored_false_positives[$key]->id;
+
+																$update = LocaliseHelper::updateFalsePositive($issues_data);
+
+																$this->item->unchecked++;
+															}
+															else if ($stored_false_positives[$key]->is_false_positive == '0')
+															{
+																$this->item->unchecked++;
+															}
+														}
+														else
+														{
+															$issues_data->id = null;
+
+															$save = LocaliseHelper::saveFalsePositive($issues_data);
+
+															$this->item->unchecked++;
+														}
+													}
+												}
+											}
+										}
 									}
 								}
 								elseif ($istranslation == 0)
@@ -706,23 +918,84 @@ class TranslationModel extends AdminModel
 					$this->item->translatedkeys   = $translatedkeys;
 					$this->item->untranslatedkeys = $untranslatedkeys;
 					$this->item->unchangedkeys    = $unchangedkeys;
-					$this->item->developdata      = $developdata;
 
 					$this->setState('translation.translatedkeys', $translatedkeys);
 					$this->setState('translation.untranslatedkeys', $untranslatedkeys);
 					$this->setState('translation.unchangedkeys', $unchangedkeys);
-					$this->setState('translation.developdata', $developdata);
 
+					// From here all those are 'extra' keys only present at the selected translation (also called 'Not in en-GB ref' keys)
+					// With this code is posible detect some cases that explain why its are extra, such as:
+					// "Deleted" since in the next Joomla release it will not be there.
+					// "Renamed" since in the next Joomla release the key has been renamed, but the string to translate remains the same.
+					// "Personalised" due are plural cases than the language to translate needs to use.
+					// "Extra" since it could not be detected that it is a deleted en-GB key
+					// or it is a 'real' extra key than never has been present at en-GB.
 					if (!empty($sections['keys']) && $istranslation == 1)
 					{
+						// Getting the plural suffixes for the selected language to translate.
+						$plural_suffixes   = $suffixes_data->plural_suffixes;
+						$cases_0           = $suffixes_data->cases_0;
+						$cases_1           = $suffixes_data->cases_1;
+						$cases_other       = $suffixes_data->cases_other;
+						$cases_more        = $suffixes_data->cases_more;
+
 						foreach ($sections['keys'] as $key => $string)
 						{
 							if (empty($refsections['keys']) || !array_key_exists($key, $refsections['keys']))
 							{
-								$this->item->extra++;
+
+								$key_case = LocaliseHelper::isPlural($plural_suffixes, $key, $rootkeys);
+
+
+								if (!empty($enGB_renamedkeys) && $enGB_renamedkeys['amount'] > 0 && in_array($key, $enGB_renamedkeys['keys']))
+								{
+									$renamedkeys[] = $key;
+									$this->item->renamed++;
+								}
+								elseif (!empty($enGB_deletedkeys) && $enGB_deletedkeys['amount'] > 0 && in_array($key, $enGB_deletedkeys['keys']))
+								{
+									$deletedkeys[] = $key;
+									$this->item->deleted++;
+								}
+								elseif ($key_case && $key_case->is_plural == true)
+								{
+									$personalisedkeys[] = $key;
+									$pluralkeys[]       = $key;
+									$this->item->plural++;
+									LocaliseHelper::getDuplicatedPlurals($ref_keys_only, $suffixes_data, $key_case, $duplicatedkeys);
+								}
+								else
+								{
+									$extrakeys[] = $key;
+									$this->item->extra++;
+								}
 							}
 						}
 					}
+
+					$this->item->developdata      = $developdata;
+					$this->item->extrakeys        = $extrakeys;
+					$this->item->deletedkeys      = $deletedkeys;
+					$this->item->renamedkeys      = $renamedkeys;
+					$this->item->pluralkeys       = $pluralkeys;
+					$this->item->rootkeys         = $rootkeys;
+					$this->item->regularkeys      = $regularkeys;
+					$this->item->personalisedkeys = $personalisedkeys;
+					$this->item->duplicatedkeys   = $duplicatedkeys;
+					$this->item->issuedkeys       = $issuedkeys;
+					$this->item->issueddata       = $issueddata;
+
+					$this->setState('translation.developdata', $developdata);
+					$this->setState('translation.extrakeys', $extrakeys);
+					$this->setState('translation.deletedkeys', $deletedkeys);
+					$this->setState('translation.renamedkeys', $renamedkeys);
+					$this->setState('translation.pluralkeys', $pluralkeys);
+					$this->setState('translation.rootkeys', $rootkeys);
+					$this->setState('translation.regularkeys', $regularkeys);
+					$this->setState('translation.personalisedkeys', $personalisedkeys);
+					$this->setState('translation.duplicatedkeys', $duplicatedkeys);
+					$this->setState('translation.issuedkeys', $issuedkeys);
+					$this->setState('translation.issueddata', $issueddata);
 
 					$done = $this->item->translated + $this->item->translatednews + $this->item->unchangednews;
 
@@ -881,16 +1154,35 @@ class TranslationModel extends AdminModel
 		$app      = Factory::getApplication();
 		$false    = false;
 
-		$have_develop        = 0;
-		$developdata         = array();
-		$revisedchanges      = array();
-		$istranslation       = '';
-		$extras_amount       = 0;
-		$text_changes_amount = 0;
-		$reflang             = '';
-		$targetlang          = '';
-		$reflang_rtl         = 0;
-		$targetlang_rtl      = 0;
+		$have_develop           = 0;
+		$developdata            = array();
+		$revisedchanges         = array();
+		$deletedkeys            = array();
+		$renamedkeys            = array();
+		$pluralkeys             = array();
+		$rootkeys               = array();
+		$regularkeys            = array();
+		$personalisedkeys       = array();
+		$duplicatedkeys         = array();
+		$issuedkeys             = array();
+		$issueddata             = array();
+		$extrakeys              = array();
+		$replacements           = array();
+		$replacements_keys      = array();
+		$istranslation          = '';
+		$new_in_dev_amount      = 0;
+		$deleted_in_dev_amount  = 0;
+		$renamed_in_dev_amount  = 0;
+		$text_changes_amount    = 0;
+		$deleted                = 0;
+		$renamed                = 0;
+		$plural                 = 0;
+		$extra                  = 0;
+		$reflang                = '';
+		$targetlang             = '';
+		$reflang_rtl            = 0;
+		$targetlang_rtl         = 0;
+		$replaced_cases_amount  = 0;
 
 		// Compute all known languages
 		static $languages = array();
@@ -910,6 +1202,16 @@ class TranslationModel extends AdminModel
 
 			$developdata         = $item->developdata;
 			$revisedchanges      = $item->revisedchanges;
+			$deletedkeys         = $item->deletedkeys;
+			$renamedkeys         = $item->renamedkeys;
+			$pluralkeys          = $item->pluralkeys;
+			$rootkeys            = $item->rootkeys;
+			$regularkeys         = $item->regularkeys;
+			$personalisedkeys    = $item->personalisedkeys;
+			$duplicatedkeys      = $item->duplicatedkeys;
+			$issuedkeys          = $item->issuedkeys;
+			$issueddata          = $item->issueddata;
+			$extrakeys           = $item->extrakeys;
 			$reflang             = $item->reflang;
 			$targetlang          = $item->targetlang;
 			$istranslation       = $item->istranslation;
@@ -925,11 +1227,20 @@ class TranslationModel extends AdminModel
 
 			if (!empty($developdata))
 			{
-				$extras_amount       = $developdata['extra_keys']['amount'];
-				$text_changes_amount = $developdata['text_changes']['amount'];
-				$refpath             = $this->getState('translation.refpath');
+				$new_in_dev_amount     = $developdata['new_keys']['amount'];
+				$text_changes_amount   = $developdata['text_changes']['amount'];
+				$deleted_in_dev_amount = $developdata['deleted_keys']['amount'];
+				$renamed_in_dev_amount = $developdata['renamed_keys']['amount'];
+				$replacements          = $developdata['renamed_keys']['replacements'];
 
-				$custompath          = LocaliseHelper::searchCustompath($client, $refpath);
+				if ($renamed_in_dev_amount > 0)
+				{
+					$replacements_keys = array_keys($replacements);
+				}
+
+				$refpath               = $this->getState('translation.refpath');
+
+				$custompath            = LocaliseHelper::searchCustompath($client, $refpath);
 
 				if ($istranslation == '0')
 				{
@@ -966,7 +1277,7 @@ class TranslationModel extends AdminModel
 					}
 				}
 
-				if ($extras_amount > 0  || $text_changes_amount > 0)
+				if ($new_in_dev_amount > 0  || $text_changes_amount > 0)
 				{
 					$have_develop      = 1;
 					$develop_file_path = $developdata['develop_file_path'];
@@ -985,6 +1296,22 @@ class TranslationModel extends AdminModel
 				$sections    = LocaliseHelper::parseSections($path);
 				$refsections = LocaliseHelper::parseSections($refpath);
 			}
+
+
+			$ref_keys_only  = array();
+			$lang_keys_only = array();
+
+			if (!empty($refsections['keys']))
+			{
+				$ref_keys_only = array_keys($refsections['keys']);
+			}
+
+			if (!empty($sections['keys']))
+			{
+				$lang_keys_only = array_keys($sections['keys']);
+			}
+
+			$extra_keys_in_translation = array_diff($lang_keys_only, $ref_keys_only);
 
 			$addform = new \SimpleXMLElement('<form />');
 
@@ -1068,8 +1395,9 @@ class TranslationModel extends AdminModel
 						$key   = $matches[1];
 						$field = $fieldset->addChild('field');
 						$field->addAttribute('label', htmlspecialchars($line));
+						$field->addAttribute('translateLabel', 'false');
 						$field->addAttribute('type', 'spacer');
-						$field->addAttribute('class', 'edition-comment normal-text');
+						$field->addAttribute('class', 'fs-5 edition-comment normal-text');
 
 						continue;
 					}
@@ -1098,7 +1426,35 @@ class TranslationModel extends AdminModel
 						}
 						else
 						{
+							// The string in en-GB reference
 							$string = $refsections['keys'][$key];
+
+							// The current translation string
+							$translation_string = isset($sections['keys'][$key]) ? $sections['keys'][$key] : $string;
+
+							// Searching for renamed keys in translation
+							if (in_array($key, $replacements_keys))
+							{
+								$old_key = $replacements[$key];
+
+								// The old translation string, if present at the translation as 'Renamed key' to delete.
+								$old_translation_string = isset($sections['keys'][$old_key]) ? $sections['keys'][$old_key] : '';
+
+								// Check if the en-GB string is equal to the translated string to catch untranslated cases only.
+								if (!empty($old_translation_string) && $translation_string == $string)
+								{
+									// Check if the old string in translation was translated
+									if ($old_translation_string != $string)
+									{
+										$sections['keys'][$key] = $old_translation_string;
+										$replaced_cases_amount++;
+
+										// TODO Check if the old translated string is an issued string case to skip the replacement.
+									}
+								}
+
+							}
+
 							$translated = isset($sections['keys'][$key]);
 							$modified   = $translated && $sections['keys'][$key] != $refsections['keys'][$key];
 						}
@@ -1115,6 +1471,48 @@ class TranslationModel extends AdminModel
 						$field->addAttribute('istranslation', $istranslation);
 						$field->addAttribute('istextchange', 0);
 						$field->addAttribute('isextraindev', 0);
+
+						if (isset($issueddata[$key]))
+						{
+							$field->addAttribute('isissued', 1);
+							$field->addAttribute('engb_string', (string) $issueddata[$key]->engb_string);
+							$field->addAttribute('ttms_string', (string) $issueddata[$key]->ttms_string);
+							$field->addAttribute('issue_details', (string) $issueddata[$key]->issue_details);
+						}
+						else
+						{
+							$field->addAttribute('isissued', 0);
+							$field->addAttribute('engb_string', '');
+							$field->addAttribute('ttms_string', '');
+							$field->addAttribute('issue_details', '');
+						}
+
+						if (in_array($key, $rootkeys))
+						{
+							$field->addAttribute('isroot', 1);
+						}
+						else
+						{
+							$field->addAttribute('isroot', 0);
+						}
+
+						if (in_array($key, $pluralkeys))
+						{
+							$field->addAttribute('isplural', 1);
+						}
+						else
+						{
+							$field->addAttribute('isplural', 0);
+						}
+
+						if (in_array($key, $duplicatedkeys))
+						{
+							$field->addAttribute('isduplicated', 1);
+						}
+						else
+						{
+							$field->addAttribute('isduplicated', 0);
+						}
 
 						if ($have_develop == '1' && in_array($key, $developdata['text_changes']['keys']))
 						{
@@ -1133,11 +1531,9 @@ class TranslationModel extends AdminModel
 							$field->addAttribute('sourcetext', $sourcetext);
 							$field->addAttribute('targettext', $targettext);
 						}
-						elseif ($have_develop == '1' && in_array($key, $developdata['extra_keys']['keys']))
+						elseif ($have_develop == '1' && in_array($key, $developdata['new_keys']['keys']))
 						{
-							$label = '<p class="key-case"><span class="new_word"><strong>['
-								. Text::_('COM_LOCALISE_NEW_KEY_IN_DEVELOP')
-								. ']</strong> </span><strong>'
+							$label = '<p class="key-case"><strong>'
 								. $key
 								. '</strong></p><p class="normal-text">'
 								. htmlspecialchars($string, ENT_COMPAT, 'UTF-8')
@@ -1152,6 +1548,8 @@ class TranslationModel extends AdminModel
 								. '</strong></p><p class="normal-text">'
 								. htmlspecialchars($string, ENT_COMPAT, 'UTF-8')
 								. '</p>';
+
+							$field->attributes()->isextraindev = 0;
 						}
 
 						$label = '<div class="word-break-width-100">'
@@ -1174,6 +1572,8 @@ class TranslationModel extends AdminModel
 						$field->addAttribute('name', $key);
 						$field->addAttribute('reflang', $reflang);
 						$field->addAttribute('targetlang', $targetlang);
+						$field->addAttribute('filename', basename($this->getState('translation.path')));
+						$field->addAttribute('client', $client);
 						$field->addAttribute('reflang_is_rtl', $reflang_rtl);
 						$field->addAttribute('targetlang_is_rtl', $targetlang_rtl);
 						$field->addAttribute('type', 'key');
@@ -1188,65 +1588,170 @@ class TranslationModel extends AdminModel
 				}
 
 				$stream->close();
-				$newstrings = false;
 
-				if (!empty($sections['keys']))
+				if ($istranslation == 1)
 				{
-					foreach ($sections['keys'] as $key => $string)
+					$cases = array('renamed' => $renamedkeys, 'deleted' => $deletedkeys, 'personalised' => $personalisedkeys, 'extra' => $extrakeys);
+
+					if (!empty($extra_keys_in_translation))
 					{
-						if (!isset($refsections['keys'][$key]))
+						foreach ($cases as $case => $case_data)
 						{
-							if (!$newstrings)
+							if (empty($case_data))
 							{
-								$newstrings = true;
-								$form->load($addform, false);
-								$section = 'COM_LOCALISE_TEXT_TRANSLATION_NOTINREFERENCE';
-								$addform = new \SimpleXMLElement('<form />');
-								$group   = $addform->addChild('fields');
-								$group->addAttribute('name', 'strings');
-								$fieldset = $group->addChild('fieldset');
-								$fieldset->addAttribute('name', $section);
-								$fieldset->addAttribute('label', $section);
+								continue;
 							}
 
-							$field   = $fieldset->addChild('field');
-							$status  = 'extra';
-							$default = $string;
+							$newstrings = false;
 
-							$label = '<p class="key-case"><strong>'
-								. $key
-								. '</strong></p>';
-							$label = '<div class="word-break-width-100">'
-								. $label
-								. '</div>';
-
-							$field->addAttribute('status', $status);
-							$field->addAttribute('description', $string);
-							$field->addAttribute('istranslation', $istranslation);
-
-							if ($default)
+							foreach ($extra_keys_in_translation as $extra_key_in_translation)
 							{
-								$field->addAttribute('default', $default);
-							}
-							else
-							{
-								$field->addAttribute('default', $string);
-							}
+								if(in_array($extra_key_in_translation, $case_data))
+								{
+									if (!in_array($extra_key_in_translation, $ref_keys_only))
+									{
+										$string = $sections['keys'][$extra_key_in_translation];
 
-							$field->addAttribute('label', $label);
-							$field->addAttribute('name', $key);
-							$field->addAttribute('reflang', $reflang);
-							$field->addAttribute('targetlang', $targetlang);
-							$field->addAttribute('reflang_is_rtl', $reflang_rtl);
-							$field->addAttribute('targetlang_is_rtl', $targetlang_rtl);
-							$field->addAttribute('type', 'key');
-							$field->addAttribute('filter', 'raw');
+										if (!$newstrings)
+										{
+											$newstrings = true;
+											$form->load($addform, false);
+											$section = 'COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($case);
+											$addform = new \SimpleXMLElement('<form />');
+											$group   = $addform->addChild('fields');
+											$group->addAttribute('name', 'strings');
+											$fieldset = $group->addChild('fieldset');
+											$fieldset->addAttribute('name', $section);
+											$fieldset->addAttribute('label', $section);
+										}
+
+										$field   = $fieldset->addChild('field');
+										$status  = $case;
+										$default = $string;
+
+										$label = '<p class="key-case"><strong>'
+										. $extra_key_in_translation
+										. '</strong></p>';
+										$label = '<div class="word-break-width-100">'
+										. $label
+										. '</div>';
+
+										$field->addAttribute('status', $status);
+										$field->addAttribute('description', $string);
+										$field->addAttribute('istranslation', $istranslation);
+
+										if ($default)
+										{
+											$field->addAttribute('default', $default);
+										}
+										else
+										{
+											$field->addAttribute('default', $string);
+										}
+
+										$field->addAttribute('label', $label);
+										$field->addAttribute('name', $extra_key_in_translation);
+										$field->addAttribute('reflang', $reflang);
+										$field->addAttribute('targetlang', $targetlang);
+										$field->addAttribute('reflang_is_rtl', $reflang_rtl);
+										$field->addAttribute('targetlang_is_rtl', $targetlang_rtl);
+										$field->addAttribute('type', 'key');
+										$field->addAttribute('filter', 'raw');
+
+										if ($case == 'personalised')
+										{
+											$field->addAttribute('ispersonalised', 1);
+
+											if (in_array($extra_key_in_translation, $duplicatedkeys))
+											{
+												$field->addAttribute('isduplicated', 1);
+											}
+											else
+											{
+												$field->addAttribute('isduplicated', 0);
+											}
+										}
+										else
+										{
+											$field->addAttribute('ispersonalised', 0);
+											$field->addAttribute('isduplicated', 0);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					$newstrings = false;
+
+					if (!empty($sections['keys']))
+					{
+						foreach ($sections['keys'] as $key => $string)
+						{
+							if (!isset($refsections['keys'][$key]))
+							{
+								if (!$newstrings)
+								{
+									$newstrings = true;
+									$form->load($addform, false);
+									$section = 'COM_LOCALISE_TEXT_TRANSLATION_EXTRA';
+									$addform = new \SimpleXMLElement('<form />');
+									$group   = $addform->addChild('fields');
+									$group->addAttribute('name', 'strings');
+									$fieldset = $group->addChild('fieldset');
+									$fieldset->addAttribute('name', $section);
+									$fieldset->addAttribute('label', $section);
+								}
+
+								$field   = $fieldset->addChild('field');
+								$status  = 'extra';
+								$default = $string;
+
+								$label = '<p class="key-case"><strong>'
+									. $key
+									. '</strong></p>';
+								$label = '<div class="word-break-width-100">'
+									. $label
+									. '</div>';
+
+								$field->addAttribute('status', $status);
+								$field->addAttribute('description', $string);
+								$field->addAttribute('istranslation', $istranslation);
+
+								if ($default)
+								{
+									$field->addAttribute('default', $default);
+								}
+								else
+								{
+									$field->addAttribute('default', $string);
+								}
+
+								$field->addAttribute('label', $label);
+								$field->addAttribute('name', $key);
+								$field->addAttribute('reflang', $reflang);
+								$field->addAttribute('targetlang', $targetlang);
+								$field->addAttribute('reflang_is_rtl', $reflang_rtl);
+								$field->addAttribute('targetlang_is_rtl', $targetlang_rtl);
+								$field->addAttribute('type', 'key');
+								$field->addAttribute('filter', 'raw');
+							}
 						}
 					}
 				}
 			}
 
 			$form->load($addform, false);
+
+			if ($replaced_cases_amount > 0)
+			{
+				Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_TRANSLATION_REPLACED_CASES_AMOUNT',
+					$renamed_in_dev_amount,
+					$replaced_cases_amount),
+					'notice');
+			}
 		}
 
 		// Check the session for previously entered form data.
@@ -1687,19 +2192,25 @@ class TranslationModel extends AdminModel
 
 		if (!empty($formData['strings']))
 		{
-			$data['strings'] = $formData['strings'];
+			$client     = $this->getState('translation.client');
+			$reflang    = $this->getState('translation.reference');
+			$targetlang = $this->getState('translation.tag');
+			$filename   = basename($this->getState('translation.refpath'));
+
+			$data['strings']       = $formData['strings'];
+			$data['falsepositive'] = (array) $formData['falsepositive'];
 
 			if (!empty($formData['text_changes']))
 			{
-				$data['text_changes'] = $formData['text_changes'];
+				$data['text_changes']        = $formData['text_changes'];
 				$data['source_text_changes'] = $formData['source_text_changes'];
 				$data['target_text_changes'] = $formData['target_text_changes'];
 
 				$changes_data = array();
-				$changes_data['client'] = $this->getState('translation.client');
-				$changes_data['reftag'] = $this->getState('translation.reference');
-				$changes_data['tag'] = $this->getState('translation.tag');
-				$changes_data['filename'] = basename($this->getState('translation.refpath'));
+				$changes_data['client']   = $client;
+				$changes_data['reftag']   = $reflang;
+				$changes_data['tag']      = $targetlang;
+				$changes_data['filename'] = $filename;
 
 				foreach ($data['text_changes'] as $key => $revised)
 				{
@@ -1715,6 +2226,42 @@ class TranslationModel extends AdminModel
 					$changes_data['source_text'] = $data['source_text_changes'][$key];
 
 					LocaliseHelper::updateRevisedvalue($changes_data);
+				}
+			}
+
+			if (!empty($data['falsepositive']) && $reflang == 'en-GB' && $reflang != $targetlang)
+			{
+				$db_data = new \JObject;
+				$db_data->client     = $client;
+				$db_data->reflang    = $reflang;
+				$db_data->targetlang = $targetlang;
+				$db_data->filename   = $filename;
+
+				$stored_false_positives = LocaliseHelper::getFalsePositives($db_data);
+
+				foreach ($stored_false_positives as $stored)
+				{
+					$key = $stored->key;
+					$issues_data = new \JObject;
+					$issues_data->id         = $stored->id;
+					$issues_data->client     = $client;
+					$issues_data->reflang    = $reflang;
+					$issues_data->targetlang = $targetlang;
+					$issues_data->filename   = $filename;
+
+					if (in_array($stored->key, $data['falsepositive']))
+					{
+						$issues_data->is_false_positive = '1';
+					}
+					else
+					{
+						$issues_data->is_false_positive = '0';
+					}
+
+					$issues_data->key    = $key;
+					$issues_data->targetlang_string = base64_encode($data['strings'][$key]);
+
+					$update = LocaliseHelper::updateFalsePositive($issues_data);
 				}
 			}
 		}

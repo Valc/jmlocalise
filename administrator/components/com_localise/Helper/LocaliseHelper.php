@@ -18,6 +18,7 @@ use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\Filesystem\Folder;
 use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Filesystem\Stream;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
 use Joomla\CMS\Version;
@@ -1823,19 +1824,50 @@ abstract class LocaliseHelper
 			$keys_in_develop   = array_keys($develop_sections['keys']);
 
 			// Catching new keys in develop
-			$developdata['extra_keys']['amount']  = 0;
-			$developdata['extra_keys']['keys']    = array();
-			$developdata['extra_keys']['strings'] = array();
+			$developdata['new_keys']['amount']           = 0;
+			$developdata['new_keys']['keys']             = array();
+			$developdata['new_keys']['strings']          = array();
+			$developdata['deleted_keys']['amount']       = 0;
+			$developdata['deleted_keys']['keys']         = array();
+			$developdata['deleted_keys']['strings']      = array();
+			$developdata['renamed_keys']['amount']       = 0;
+			$developdata['renamed_keys']['keys']         = array();
+			$developdata['renamed_keys']['strings']      = array();
+			$developdata['renamed_keys']['replacements'] = array();
 
-			$extras_in_develop = array_diff($keys_in_develop, $keys_in_reference);
+			$extras_in_develop  = array_diff($keys_in_develop, $keys_in_reference);
+			$deleted_in_develop = array_diff($keys_in_reference, $keys_in_develop);
+
+			if (!empty($deleted_in_develop))
+			{
+				foreach ($deleted_in_develop as $deleted_key)
+				{
+					$deleted_string = $refsections['keys'][$deleted_key];
+					$renamed_key    = array_search($deleted_string, $develop_sections['keys']);
+
+					if ($renamed_key && is_string($renamed_key))
+					{
+						$developdata['renamed_keys']['amount']++;
+						$developdata['renamed_keys']['keys'][]                 = $deleted_key;
+						$developdata['renamed_keys']['strings'][$deleted_key]  = $deleted_string;
+						$developdata['renamed_keys']['replacements'][$renamed_key] = $deleted_key;
+					}
+					else
+					{
+						$developdata['deleted_keys']['amount']++;
+						$developdata['deleted_keys']['keys'][]                = $deleted_key;
+						$developdata['deleted_keys']['strings'][$deleted_key] = $deleted_string;
+					}
+				}
+			}
 
 			if (!empty($extras_in_develop))
 			{
 				foreach ($extras_in_develop as $extra_key)
 				{
-					$developdata['extra_keys']['amount']++;
-					$developdata['extra_keys']['keys'][]              = $extra_key;
-					$developdata['extra_keys']['strings'][$extra_key] = $develop_sections['keys'][$extra_key];
+					$developdata['new_keys']['amount']++;
+					$developdata['new_keys']['keys'][]              = $extra_key;
+					$developdata['new_keys']['strings'][$extra_key] = $develop_sections['keys'][$extra_key];
 				}
 			}
 
@@ -2433,6 +2465,122 @@ abstract class LocaliseHelper
 	}
 
 	/**
+	 * Get the false positives list by the selected data
+	 *
+	 * @param   object $db_data  The required data to get the false positives list.
+	 *
+	 * @return object
+	 *
+	 */
+	public static function getFalsePositives($db_data)
+	{
+		if (!is_object($db_data))
+		{
+			return false;
+		}
+
+		$client     = $db_data->client;
+		$reflang    = $db_data->reflang;
+		$targetlang = $db_data->targetlang;
+		$filename   = $db_data->filename;
+
+		$db    = Factory::getDbo();
+		$query = $db->getQuery(true);
+
+		$query->select(
+				array(
+					$db->quoteName('id'),
+					$db->quoteName('client'),
+					$db->quoteName('reflang'),
+					$db->quoteName('targetlang'),
+					$db->quoteName('filename'),
+					$db->quoteName('is_false_positive'),
+					$db->quoteName('key'),
+					$db->quoteName('reflang_string'),
+					$db->quoteName('targetlang_string')
+				)
+		);
+
+		$query->from($db->quoteName('#__localise_false_positives'));
+		$query->where($db->quoteName('client')." = :client");
+		$query->where($db->quoteName('reflang')." = :reflang");
+		$query->where($db->quoteName('targetlang')." = :targetlang");
+		$query->where($db->quoteName('filename')." = :filename");
+		$query->bind(':client', $client);
+		$query->bind(':reflang', $reflang);
+		$query->bind(':targetlang', $targetlang);
+		$query->bind(':filename', $filename);
+
+		$db->setQuery($query);
+
+		$result = $db->loadObjectList('key');
+
+		if (! is_null($result) && ! empty($result) && $result)
+		{
+			return $result;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Save the false positives data (null 'id' to 'save')
+	 *
+	 * @param   object $issues_data  The required data to save the false positive case.
+	 *
+	 * @return bool Returns true or false.
+	 *
+	 */
+	public static function saveFalsePositive($issues_data)
+	{
+		if (!is_object($issues_data))
+		{
+			return false;
+		}
+
+		$result = Factory::getDbo()->insertObject('#__localise_false_positives', $issues_data, 'id');
+
+		if (! is_null($result) && ! empty($result) && $result)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Update the false positives data
+	 *
+	 * @param   object $issues_data  The required data to save the false positive case.
+	 *
+	 * @return bool Returns true or false.
+	 *
+	 */
+	public static function updateFalsePositive($issues_data)
+	{
+		if (!is_object($issues_data))
+		{
+			return false;
+		}
+
+		$result = Factory::getDbo()->updateObject('#__localise_false_positives', $issues_data, 'id');
+
+		if (! is_null($result) && ! empty($result) && $result)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+
+	/**
 	 * Create the required folders for develop
 	 *
 	 * @param   array   $gh_data  Array with the data
@@ -2629,11 +2777,57 @@ abstract class LocaliseHelper
 		return $text_changes;
 	}
 
+	/**
+	 * Method to obtain the HTML output of the sections inside the TRs of a table with 3 columns, only when is known section.
+	 *
+	 * @param   string  $name    The section name.
+	 * @param   string  $filter  The type of keys to filter.
+	 *
+	 * @return  string
+	 *
+	 * @since   4.11
+	 */
+	public static function getSectionHtmlOutput($name, $filter)
+	{
+		$known_sections = array(
+			'pluralkeys'       => 'COM_LOCALISE_TRANSLATION_PLURAL_KEYS_IN_TRANSLATION_COMMENT',
+			'renamedkeys'      => 'COM_LOCALISE_TRANSLATION_RENAMED_KEYS_IN_TRANSLATION_COMMENT',
+			'deletedkeys'      => 'COM_LOCALISE_TRANSLATION_DELETED_KEYS_IN_TRANSLATION_COMMENT',
+			'extrakeys'        => 'COM_LOCALISE_TRANSLATION_EXTRA_KEYS_IN_TRANSLATION_COMMENT'
+		);
+
+		$html_output = '';
+
+		if (array_key_exists($filter, $known_sections))
+		{
+			$html_output .= '<tr>';
+			$html_output .= '<th colspan="3"><span class="fs-3" style="color:darkgray;">; ';
+			$html_output .= Text::_($known_sections[$filter]);
+			$html_output .= '</span></th>';
+			$html_output .= '</tr>';
+		}
+
+		return $html_output;
+	}
+
+	/**
+	 * Method to obtain the HTML output of the keys inside the TRs of a table with 3 columns.
+	 *
+	 * @param   object  $field         The field type 'Key' data.
+	 * @param   string  $filter        The type of keys to filter.
+	 * @param   array   $keystofilter  The array containing the keys to display by the selected filter.
+	 *
+	 * @return  string
+	 *
+	 * @since   4.11
+	 */
 	public static function getKeyHtmlOutput(&$field, &$filter, &$keystofilter)
 	{
-		$html_output = '';
-		$showkey     = 0;
+		$html_output   = '';
+		$showkey       = 0;
+		$encoded_value = hash('adler32', $field->name);
 
+		// Spacer type include 'Commented' lines starting by ; and 'Blank' lines.
 		if ($filter == 'allkeys' && strtoupper($field->type) == 'SPACER')
 		{
 			$html_output .= '<tr>';
@@ -2642,11 +2836,38 @@ abstract class LocaliseHelper
 			$html_output .= '</th>';
 			$html_output .= '</tr>';
 
-			return $html_output;;
+			return $html_output;
 		}
+		else if (strtoupper($field->type) == 'SPACER')
+		{
+			$html_output .= '<tr style="display:none;">';
+			$html_output .= '<th style="display:none;" colspan="3">';
+			$html_output .= $field->label;
+			$html_output .= '</th>';
+			$html_output .= '</tr>';
+
+			return $html_output;
+		}
+
+		$is_textchange = (int) $field->label->is_textchange;
+		$is_issued     = (int) $field->label->is_issued;
 
 		if ($filter != 'allkeys' && !empty($keystofilter) && strtoupper($field->type) == 'KEY')
 		{
+			// Setting the active tab matching with the filter
+			if ($is_issued == 1 && $filter == 'issuedkeys')
+			{
+				$active = 'engb_tab_issued_' . $encoded_value;
+			}
+			else if ($is_textchange == 1 && $filter == 'textchangedkeys')
+			{
+				$active = 'engb_tab_tc_' . $encoded_value;
+			}
+			else
+			{
+				$active = 'engb_tab_' . $encoded_value;
+			}
+
 			foreach ($keystofilter as $data => $ids)
 			{
 				foreach ($ids as $keytofilter)
@@ -2661,83 +2882,802 @@ abstract class LocaliseHelper
 					}
 				}
 			}
+		}
+		elseif ($filter == 'allkeys' && strtoupper($field->type) == 'KEY')
+		{
+			$showkey = 1;
 
-			if ($showkey == '1')
+			// Setting priority to the active tab
+			if ($is_issued == 1)
 			{
-				$html_output .= '<tr>';
-				$html_output .= '<th class="width-45">';
-				$html_output .= '<div class="width-100">';
-				$html_output .= $field->label->field_label;
-				$html_output .= $field->label->field_checkbox;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '<th class="width-5">';
-				$html_output .= '<div class="width-100">';
-				$html_output .=  $field->input->field_button;
-				$html_output .=  $field->input->field_button2;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '<th class="width-45">';
-				$html_output .= '<div class="width-100">';
-				$html_output .=  $field->input->field_commented;
-				$html_output .=  $field->input->field_input;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '</tr>';
+				$active = 'engb_tab_issued_' . $encoded_value;
+			}
+			else if ($is_textchange == 1)
+			{
+				$active = 'engb_tab_tc_' . $encoded_value;
 			}
 			else
 			{
-				$html_output .= '<div style="display:none;">';
-				$html_output .= '<tr style="display:none;">';
-				$html_output .= '<th class="width-45">';
-				$html_output .= '<div class="width-100">';
-				$html_output .= $field->label->field_label;
-				$html_output .= $field->label->field_checkbox;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '<th class="width-5">';
-				$html_output .= '<div class="width-100">';
-				$html_output .=  $field->input->field_button;
-				$html_output .=  $field->input->field_button2;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '<th class="width-45">';
-				$html_output .= '<div class="width-100">';
-				$html_output .=  $field->input->field_commented;
-				$html_output .=  $field->input->field_input;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '</tr>';
-				$html_output .= '</div>';
+				$active = 'engb_tab_' . $encoded_value;
 			}
 		}
-		elseif ($filter == 'allkeys')
+		else
 		{
-			if (strtoupper($field->type) == 'KEY')
+			$active = 'engb_tab_' . $encoded_value;
+		}
+
+		if ($filter == 'allkeys' || $showkey == '1')
+		{
+			$html_output .= '<tr>';
+		}
+		else if ($filter != 'allkeys' && $showkey == '0')
+		{
+			$html_output .= '<tr style="display:none;">';
+		}
+
+		$html_output .= '<th class="width-45">';
+		$html_output .= '<div class="width-100">';
+		$html_output .= $field->label->field_details;
+
+		if ($showkey == '1')
+		{
+			if (!empty($field->label->field_details) && empty($field->input->field_commented))
 			{
-				$html_output .= '<tr>';
-				$html_output .= '<th class="width-45">';
-				$html_output .= '<div class="width-100">';
-				$html_output .= $field->label->field_label;
-				$html_output .= $field->label->field_checkbox;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '<th class="width-5">';
-				$html_output .= '<div class="width-100">';
-				$html_output .=  $field->input->field_button;
-				$html_output .=  $field->input->field_button2;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '<th class="width-45">';
-				$html_output .= '<div class="width-100">';
-				$html_output .=  $field->input->field_commented;
-				$html_output .=  $field->input->field_input;
-				$html_output .= '</div>';
-				$html_output .= '</th>';
-				$html_output .= '</tr>';
+				$html_output .= '<br><br>';
+			}
+			else if (empty($field->label->field_details) && !empty($field->input->field_commented))
+			{
+				$html_output .= '';
+			}
+			else if (!empty($field->label->field_details) && !empty($field->input->field_commented))
+			{
+				$html_output .= '<br><br><br>';
 			}
 		}
 
+		$html_output .= HTMLHelper::_('uitab.startTabSet', 'myTab', array('active' => $active));
+		$html_output .= HTMLHelper::_('uitab.addTab', 'myTab', 'engb_tab_' . $encoded_value, 'en-GB', true);
+
+		if ($is_textchange == 1 || $is_issued == 1)
+		{
+			$html_output .= $field->label->field_desc;
+		}
+		else
+		{
+			$html_output .= $field->label->field_label;
+		}
+
+		$html_output .= HTMLHelper::_('uitab.endTab');
+
+		if ($is_textchange == 1)
+		{
+			$html_output .= HTMLHelper::_('uitab.addTab', 'myTab', 'engb_tab_tc_' . $encoded_value, 'Text changes', true);
+			$html_output .= $field->label->field_label;
+			$html_output .= $field->label->textchanges_checkbox;
+			$html_output .= HTMLHelper::_('uitab.endTab');
+		}
+
+		if ($is_issued == 1)
+		{
+			$html_output .= HTMLHelper::_('uitab.addTab', 'myTab', 'engb_tab_issued_' . $encoded_value, 'Issues', true);
+			$html_output .= '<p class ="nomargin">' . $field->label->field_key . '</p>';
+			$html_output .= $field->label->engb_string;
+			$html_output .= '<p class ="nomargin">' . $field->label->targetlang . '</p>';
+			$html_output .= $field->label->ttms_string;
+			$html_output .= '<p class ="nomargin">' . Text::_('COM_LOCALISE_DETECTABLE_ISSUES') . '</p>';
+			$html_output .= $field->label->issue_details;
+			$html_output .= $field->label->falsepositive_checkbox;
+			$html_output .= HTMLHelper::_('uitab.endTab');
+		}
+
+ 		$html_output .= HTMLHelper::_('uitab.endTabSet');
+
+		if ($is_textchange == 0)
+		{
+			$html_output .= $field->label->field_checkbox;
+		}
+
+		$html_output .= '</div>';
+		$html_output .= '</th>';
+		$html_output .= '<th class="width-5">';
+		$html_output .= '<div class="width-100">';
+		$html_output .= '<br><br><br>';
+		$html_output .=  $field->input->field_button;
+		$html_output .=  $field->input->field_button2;
+		$html_output .= '</div>';
+		$html_output .= '</th>';
+		$html_output .= '<th class="width-45">';
+		$html_output .= '<div class="width-100">';
+
+		if ($showkey == '1')
+		{
+			if (!empty($field->label->field_details) && empty($field->input->field_commented))
+			{
+				$html_output .= '<br><br><br><br>';
+			}
+			else if (empty($field->label->field_details) && !empty($field->input->field_commented))
+			{
+				$html_output .= '<br>';
+			}
+			else if (!empty($field->label->field_details) && !empty($field->input->field_commented))
+			{
+				$html_output .= '<br><br><br>';
+			}
+			else if (empty($field->label->field_details) && empty($field->input->field_commented))
+			{
+				$html_output .= '<br><br>';
+			}
+		}
+
+		$html_output .=  $field->input->field_commented;
+		$html_output .=  $field->input->field_input;
+		$html_output .= '</div>';
+		$html_output .= '</th>';
+		$html_output .= '</tr>';
+
 		return $html_output;
+	}
+
+	/**
+	 * Method to parse the reference en-GB strings vs the translated ones getting unmatching results
+     * at translations that are not keepping the reference placeholders and HTML.
+	 *
+	 * @param   string  $ref_string          The en-GB string to get as reference.
+	 * @param   string  $translation_string  The translation string to parse vs the en-GB one.
+	 *
+	 * @return  object
+	 *
+	 * @since   4.11
+	 */
+	public static function parseStringIssues($ref_string, $translation_string)
+	{
+		$reply                = new \JObject;
+		$reply->is_issued     = false;
+		$reply->engb_string   = '';
+		$reply->ttms_string   = '';
+		$reply->issue_details = '';
+
+		$cases = array(
+			'ref_string'         => $ref_string,
+			'translation_string' => $translation_string
+		);
+
+		$parsed_strings = array(
+			'ref_string'         => '',
+			'translation_string' => ''
+		);
+
+		$parsing_order = array(
+			'brackets',
+			'double_brackets',
+			'placeholders',
+			'html'
+		);
+
+		$patterns = array(
+			'placeholders'    => '/%([0-9]+\$)?[bcdefusox]/',
+			'double_brackets' => "/LOCALISE_DBO[^LOCALISE_DBC]*LOCALISE_DBC/",
+			'brackets'        =>  "/\{[^\}]*\}/",
+			'html'            => "/(<([\w]+)[^>]*>)(.*?)(<\/\\2>)/"
+		);
+
+		$amounts = array(
+			'ref_string' => array(
+				'placeholders'    => '0',
+				'double_brackets' => '0',
+				'brackets'        => '0',
+				'html'            => '0'
+			),
+			'translation_string' => array(
+				'placeholders'    => '0',
+				'double_brackets' => '0',
+				'brackets'        => '0',
+				'html'            => '0'
+			)
+       );
+
+		$catched_data = array(
+			'ref_string' => array(
+				'placeholders'    => array(),
+				'double_brackets' => array(),
+				'brackets'        => array(),
+				'html'            => array()
+			),
+			'translation_string' => array(
+				'placeholders'    => array(),
+				'double_brackets' => array(),
+				'brackets'        => array(),
+				'html'            => array()
+			)
+
+       );
+
+		foreach ($cases as $case => $string)
+		{
+			$parsed_strings[$case] = $string;
+			$parsed_strings[$case] = str_replace('"_QQ_"', 'LOCALISE_ESCAPED_QUOTES', $parsed_strings[$case]);
+			$parsed_strings[$case] = str_replace('\"', 'LOCALISE_ESCAPED_QUOTES', $parsed_strings[$case]);
+			$parsed_strings[$case] = str_replace('{{', 'LOCALISE_DBO', $parsed_strings[$case]);
+			$parsed_strings[$case] = str_replace('}}', 'LOCALISE_DBC', $parsed_strings[$case]);
+
+			foreach ($patterns as $name => $pattern)
+			{
+				if (preg_match_all($pattern, $parsed_strings[$case], $matches, PREG_SET_ORDER))
+				{
+					foreach($matches as $match)
+					{
+						foreach($match as $id => $catched)
+						{
+							if ($name == 'html')
+							{
+				 				if ($id == '1' || $id == '4')
+								{
+									if (!in_array(base64_encode($catched), $catched_data[$case]['html']))
+									{
+										$catched_data[$case]['html'][] = base64_encode($catched);
+									}
+
+									$amounts[$case]['html']++;
+								}
+							}
+							else if ($name == 'placeholders')
+							{
+				 				if ($catched[0] == '%')
+								{
+									if (!in_array(base64_encode($catched), $catched_data[$case]['placeholders']))
+									{
+										$catched_data[$case]['placeholders'][] = base64_encode($catched);
+									}
+
+									$amounts[$case]['placeholders']++;
+								}
+							}
+							else if ($name == 'double_brackets')
+							{
+								if (!in_array(base64_encode($match[$id]), $catched_data[$case]['double_brackets']))
+								{
+									$catched_data[$case]['double_brackets'][] = base64_encode($match[$id]);
+								}
+
+								$amounts[$case]['double_brackets']++;
+							}
+							else if ($name == 'brackets')
+							{
+								if (!in_array(base64_encode($match[$id]), $catched_data[$case]['brackets']))
+								{
+									$catched_data[$case]['brackets'][] = base64_encode($match[$id]);
+								}
+
+								$amounts[$case]['brackets']++;
+
+							}
+						}
+					}
+				}
+			}
+		}
+
+		$cases_name = array(
+			'html'              => Text::_('COM_LOCALISE_CASES_NAME_TYPE_HTML'),
+			'double_brackets'   => Text::_('COM_LOCALISE_CASES_NAME_TYPE_DOUBLE_BRANCKETS'),
+			'brackets'          => Text::_('COM_LOCALISE_CASES_NAME_TYPE_BRACKETS'),
+			'placeholders'      => Text::_('COM_LOCALISE_CASES_NAME_TYPE_PLACEHOLDERS')
+		);
+
+		$engb_amount   = $amounts['ref_string'];
+		$ttms_amount   = $amounts['translation_string'];
+
+		$engb_data     = $catched_data['ref_string'];
+		$ttms_data     = $catched_data['translation_string'];
+
+		$engb_string   = $parsed_strings['ref_string'];
+		$ttms_string   = $parsed_strings['translation_string'];
+
+		$issue_details = '';
+
+		foreach ($parsing_order as $case)
+		{
+			$equal_amount = true;
+
+			if ($engb_amount[$case] != $ttms_amount[$case])
+			{
+				$reply->is_issued = true;
+				$equal_amount     = false;
+			}
+
+			if (empty($engb_data[$case]) && empty($ttms_data[$case]))
+			{
+				continue;
+			}
+			else if (empty($engb_data[$case]))
+			{
+				$reply->is_issued = true;
+
+				$issue_details .= '[Extra]'.$cases_name[$case].':LOCALISE_1BR';
+
+				foreach ($ttms_data[$case] as $element)
+				{
+					$ttms_string = str_replace(base64_decode($element), 'LOCALISE_SPAN_DANGER_OPEN'
+						. base64_decode($element)
+						. 'LOCALISE_SPAN_CLOSE', $ttms_string);
+
+					$issue_details .= 'LOCALISE_SPAN_DANGER_OPEN'
+						. base64_decode($element)
+						. 'LOCALISE_SPAN_CLOSELOCALISE_1BR';
+				}
+			}
+			else if (empty($ttms_data[$case]))
+			{
+				$reply->is_issued = true;
+				$issue_details .= '[Missing]'
+					. $cases_name[$case]
+					. ':LOCALISE_1BR';
+
+				foreach ($engb_data[$case] as $element)
+				{
+					$engb_string = str_replace(base64_decode($element), 'LOCALISE_SPAN_SUCCESS_OPEN'
+						. base64_decode($element)
+						. 'LOCALISE_SPAN_CLOSE', $engb_string);
+
+					$issue_details .= 'LOCALISE_SPAN_DANGER_OPEN'
+						. base64_decode($element)
+						. 'LOCALISE_SPAN_CLOSELOCALISE_1BR';
+				}
+			}
+			else if (!array_diff($engb_data[$case], $ttms_data[$case])
+			&& !array_diff($ttms_data[$case], $engb_data[$case]))
+			{
+				if ($equal_amount == false)
+				{
+					$engb_amount_details   = 'LOCALISE_SPAN_SUCCESS_OPEN' . $engb_amount[$case] . 'LOCALISE_SPAN_CLOSE';
+					$ttms_amount_details   = 'LOCALISE_SPAN_DANGER_OPEN' . $ttms_amount[$case] . 'LOCALISE_SPAN_CLOSE';
+
+					foreach ($engb_data[$case] as $element)
+					{
+							$engb_string = str_replace(base64_decode($element), 'LOCALISE_SPAN_SUCCESS_OPEN'
+								. base64_decode($element)
+								. 'LOCALISE_SPAN_CLOSE', $engb_string);
+
+							$ttms_string = str_replace(base64_decode($element), 'LOCALISE_SPAN_SUCCESS_OPEN'
+								. base64_decode($element)
+								. 'LOCALISE_SPAN_CLOSE', $ttms_string);
+					}
+
+					$issue_details .= '[Amount]'
+						. $cases_name[$case]
+						. ':LOCALISE_1BR'
+						. $engb_amount_details
+						. ' vs '
+						. $ttms_amount_details
+						. ' instances of pairable HTML tags or single placeholders';
+				}
+				else
+				{
+					// The parsed cases are equal
+					continue;
+				}
+			}
+			else
+			{
+				$reply->is_issued = true;
+
+				$common_cases  = array_intersect($engb_data[$case], $ttms_data[$case]);
+				$missing_cases = array_diff($engb_data[$case], $ttms_data[$case]);
+				$extra_cases   = array_diff($ttms_data[$case], $engb_data[$case]);
+
+				if (!empty($common_cases))
+				{
+					foreach ($common_cases as $element)
+					{
+						$engb_string = str_replace(base64_decode($element), 'LOCALISE_SPAN_SUCCESS_OPEN'
+							. base64_decode($element)
+							. 'LOCALISE_SPAN_CLOSE', $engb_string);
+
+						$ttms_string = str_replace(base64_decode($element), 'LOCALISE_SPAN_SUCCESS_OPEN'
+							. base64_decode($element)
+							. 'LOCALISE_SPAN_CLOSE', $ttms_string);
+					}
+				}
+
+				if (!empty($missing_cases))
+				{
+					$issue_details .= '[Missing]'
+						. $cases_name[$case]
+						. ':LOCALISE_1BR';
+
+					foreach ($missing_cases as $element)
+					{
+						$engb_string = str_replace(base64_decode($element), 'LOCALISE_SPAN_SUCCESS_OPEN'
+							. base64_decode($element)
+							. 'LOCALISE_SPAN_CLOSE', $engb_string);
+
+						$issue_details .= 'LOCALISE_SPAN_DANGER_OPEN'
+							. base64_decode($element)
+							. 'LOCALISE_SPAN_CLOSELOCALISE_1BR';
+					}
+				}
+
+				if (!empty($extra_cases))
+				{
+					$issue_details .= '[Extra]'
+						. $cases_name[$case]
+						. ':LOCALISE_1BR';
+
+					foreach ($extra_cases as $element)
+					{
+						$ttms_string = str_replace(base64_decode($element), 'LOCALISE_SPAN_DANGER_OPEN'
+							. base64_decode($element)
+							. 'LOCALISE_SPAN_CLOSE', $ttms_string);
+
+						$issue_details .= 'LOCALISE_SPAN_DANGER_OPEN'
+							. base64_decode($element)
+							. 'LOCALISE_SPAN_CLOSELOCALISE_1BR';
+					}
+				}
+			}
+		}
+
+		if ($reply->is_issued == true)
+		{
+			$engb_string = htmlspecialchars($engb_string);
+
+			$engb_string = str_replace('LOCALISE_ESCAPED_QUOTES', '\"', $engb_string);
+			$engb_string = str_replace('LOCALISE_DBO', '{{', $engb_string);
+			$engb_string = str_replace('LOCALISE_DBC', '}}', $engb_string);
+			$engb_string = str_replace('LOCALISE_SPAN_BADGE_WARNING_OPEN', '<span class="badge bg-warning">', $engb_string);
+			$engb_string = str_replace('LOCALISE_SPAN_SUCCESS_OPEN', '<span class="bg-success text-light">', $engb_string);
+			$engb_string = str_replace('LOCALISE_SPAN_DANGER_OPEN', '<span class="bg-danger text-light">', $engb_string);
+			$engb_string = str_replace('LOCALISE_SPAN_CLOSE', '</span>', $engb_string);
+			$engb_string = str_replace('LOCALISE_1BR', '<BR>', $engb_string);
+
+			$ttms_string = htmlspecialchars($ttms_string);
+
+			$ttms_string = str_replace('LOCALISE_ESCAPED_QUOTES', '\"', $ttms_string);
+			$ttms_string = str_replace('LOCALISE_DBO', '{{', $ttms_string);
+			$ttms_string = str_replace('LOCALISE_DBC', '}}', $ttms_string);
+			$ttms_string = str_replace('LOCALISE_SPAN_BADGE_WARNING_OPEN', '<span class="badge bg-warning">', $ttms_string);
+			$ttms_string = str_replace('LOCALISE_SPAN_SUCCESS_OPEN', '<span class="bg-success text-light">', $ttms_string);
+			$ttms_string = str_replace('LOCALISE_SPAN_DANGER_OPEN', '<span class="bg-danger text-light">', $ttms_string);
+			$ttms_string = str_replace('LOCALISE_SPAN_CLOSE', '</span>', $ttms_string);
+			$ttms_string = str_replace('LOCALISE_1BR', '<BR>', $ttms_string);
+
+			if (empty($issue_details))
+			{
+				$issue_details = 'Clean';
+			}
+			else
+			{
+				$issue_details = htmlspecialchars($issue_details);
+
+				$issue_details = str_replace('LOCALISE_ESCAPED_QUOTES', '\"', $issue_details);
+				$issue_details = str_replace('LOCALISE_DBO', '{{', $issue_details);
+				$issue_details = str_replace('LOCALISE_DBC', '}}', $issue_details);
+				$issue_details = str_replace('LOCALISE_SPAN_BADGE_WARNING_OPEN', '<span class="badge bg-warning">', $issue_details);
+				$issue_details = str_replace('LOCALISE_SPAN_SUCCESS_OPEN', '<span class="bg-success text-light">', $issue_details);
+				$issue_details = str_replace('LOCALISE_SPAN_DANGER_OPEN', '<span class="bg-danger text-light">', $issue_details);
+				$issue_details = str_replace('LOCALISE_SPAN_CLOSE', '</span>', $issue_details);
+				$issue_details = str_replace('LOCALISE_1BR', '<BR>', $issue_details);
+			}
+
+			$reply->engb_string   = $engb_string;
+			$reply->ttms_string   = $ttms_string;
+			$reply->issue_details = $issue_details;
+		}
+
+
+		return $reply;
+	}
+
+	/**
+	 * Determine if the key is a plural case of the selected language to translate.
+	 *
+	 * @param   array   $plural_suffixes  The returned plural suffixes for the selected language to translate.
+	 * @param   string  $key              The key to be validated.
+	 * @param   array   $rootkeys         The detected plural root keys comming from the en-GB language.
+	 *
+	 * @return object
+	 */
+	public static function isPlural($plural_suffixes, $key, $rootkeys)
+	{
+		// This is normally used to detect plurals in keys that only exist in the translation (extra keys in translation / Not in ref keys):
+		// those are 'Personalized plural cases' in the selected language to translate.
+		//
+		// The '$plural_suffixes' are extracted running the 'getPluralSuffixes($n)' function
+		// present within the 'localise.php' file of the selected language to translate.
+		//
+		// So, other cases are handled as 'extra keys' due this program does not attempt to handle 'fake plurals' for non en-GB languages,
+		// or other cases than does not reply with success as plural case from the localise.php file of the selected language to translate.
+
+		if (empty($plural_suffixes) || empty($key))
+		{
+			return false;
+		}
+
+		$key_case =  new \JObject;
+
+		// Converting the key to array
+		$root_key = explode('_', $key);
+
+		// Getting the last array item to be compared as suffix
+		$last_item = end($root_key);
+
+		// Deleting the last array item attempting to get the "unsuffixed key".
+		array_pop($root_key);
+
+		// Returning to string format
+		$root_key = implode('_', $root_key);
+
+		// Deleting last '_' if present
+		$root_key = rtrim($root_key, '_');
+
+		$key_case->is_plural = false;
+
+		if (in_array($last_item, $plural_suffixes) && in_array($root_key, $rootkeys))
+		{
+			$key_case->is_plural = true;
+		}
+
+		$key_case->suffix   = $last_item;
+		$key_case->root_key = $root_key;
+
+		return $key_case;
+	}
+
+	/**
+	 * Determine if the key is a plural case comming from the en-GB language.
+	 *
+	 * @param   string  $key             The key to be validated.
+	 * @param   array   $$ref_keys_only  The en-GB keys present within the file.
+	 *
+	 * @return object
+	 */
+	public static function isEngbPlural($key, &$ref_keys_only)
+	{
+		// The en-GB has a knowen plural cases amount.
+		// To handle them is required take in mind than is allowed use multiple suffixes to reply to the same plural case.
+		// Those are 'Regular plural cases' due are also present as 'common keys' to translate.
+		// Also seems the Joomla Project is allowing a sort of 'fake plurals'
+		// due they does not reply with a validated suffix when called by en-GB localise.php file using the 'getPluralSuffixes($n)'function.
+
+		if (empty($key))
+		{
+			return false;
+		}
+
+		// The en-GB plural suffixes cases.
+		$plural_suffixes = array('0', '1', 'ONE', 'MORE', 'OTHER');
+
+		$key_case =  new \JObject;
+
+		// Converting the key to array
+		$root_key = explode('_', $key);
+
+		// Getting the last array item to be compared as suffix
+		$last_item = end($root_key);
+
+		// Deleting the last array item attempting to get the "suffix".
+		array_pop($root_key);
+
+		// Returning to string format
+		$root_key = implode('_', $root_key);
+
+		// Deleting last '_' if present
+		$root_key = rtrim($root_key, '_');
+
+		$key_case->is_plural = false;
+
+		if (in_array($last_item, $plural_suffixes) && in_array($root_key, $ref_keys_only))
+		{
+			// At this point this one seems is true and we set it as true.
+			$key_case->is_plural = true;
+		}
+
+		$key_case->plural_suffixes = $plural_suffixes;
+		$key_case->suffix          = $last_item;
+		$key_case->root_key        = $root_key;
+
+		return $key_case;
+	}
+
+	/**
+	 * Gets the plural suffixes from a selected language.
+	 *
+	 * @return array
+	 */
+	public static function getPluralSuffixes(&$language_instance, $counter = 100)
+	{
+		// Surelly this one is not the best practice to get the suffixes for plural cases from the selected language to translate
+		// But i can not found an 'easy mode' to extract them as array from the localise.php file or by Joomla API call.
+		//
+		// Also, to handle them is required take in mind than is allowed use multiple suffixes to reply to the same plural case.
+		// The workarround is working and opened to be finetuned to return suffixes from the localise.php file of the selected language to translate.
+
+		if (empty($counter) || $counter < 0)
+		{
+			return false;
+		}
+
+		$suffixes_data =  new \JObject;
+
+		// $plural_suffixes will store all the matches.
+		$plural_suffixes = array();
+		$cases_0 = array('0');
+		$cases_1 = array('1', 'ONE');
+		$cases_other = array('OTHER', 'MORE');
+		$cases_more = array('OTHER', 'MORE');
+
+		// With the current working mode the en-GB suffixes are also xx-XX suffixes.
+		// The 'easy way' to detect duplicated cases on xx-XX languages suffixes is add the en-GB ones to the defined by the xx-XX ones.
+		for ($n = 0; $n <= 1; $n++)
+		{
+			// Adding the en-GB ones
+			if ($n == 0)
+			{
+				$plural_suffixes[] = '0';
+			}
+			else if ($n == 1)
+			{
+				$plural_suffixes[] = 'ONE';
+				$plural_suffixes[] = '1';
+			}
+
+			$suffixes = $language_instance->getPluralSuffixes($n);
+
+			foreach ($suffixes as $suffix)
+			{
+				// Adding the xx-XX ones, if not present
+				if (!in_array($suffix, $plural_suffixes))
+				{
+					$plural_suffixes[] = $suffix;
+				}
+
+				if ($n == 0 && !in_array($suffix, $cases_0))
+				{
+					$cases_0[] = $suffix;
+				}
+				else if ($n == 1 && !in_array($suffix, $cases_1))
+				{
+					$cases_1[] = $suffix;
+				}
+			}
+		}
+
+		// Adding the 'OTHER' and 'MORE'
+		if (!in_array('MORE', $plural_suffixes))
+		{
+			$plural_suffixes[] = 'MORE';
+		}
+
+		if (!in_array('OTHER', $plural_suffixes))
+		{
+			$plural_suffixes[] = 'OTHER';
+		}
+
+		for ($n = 2; $n <= $counter; $n++)
+		{
+			$suffixes = $language_instance->getPluralSuffixes($n);
+
+			foreach ($suffixes as $suffix)
+			{
+				if ($suffix == 'OTHER')
+				{
+					// This will ensure odd cases with personalized plural cases for 'OTHER'
+					foreach ($suffixes as $suffix)
+					{
+						if (!in_array($suffix, $cases_other))
+						{
+							$cases_other[] = $suffix;
+						}
+					}
+				}
+				else if ($suffix == 'MORE')
+				{
+					// This will ensure odd cases with personalized plural cases for 'MORE'
+					foreach ($suffixes as $suffix)
+					{
+						if (!in_array($suffix, $cases_more))
+						{
+							$cases_more[] = $suffix;
+						}
+					}
+				}
+				else if (!in_array($suffix, $plural_suffixes))
+				{
+					$plural_suffixes[] = $suffix;
+				}
+			}
+		}
+
+		// To catch plurals
+		$suffixes_data->plural_suffixes = $plural_suffixes;
+
+		// To catch duplicated plurals
+		$suffixes_data->cases_0         = $cases_0;
+		$suffixes_data->cases_1         = $cases_1;
+		$suffixes_data->cases_other     = $cases_other;
+		$suffixes_data->cases_more      = $cases_more;
+
+		return $suffixes_data;
+	}
+
+
+	/**
+	 * Search for duplicated plural cases.
+	 *
+	 * @return array
+	 */
+	public static function getDuplicatedPlurals(&$ref_keys_only, &$suffixes_data, &$key_case, &$duplicatedkeys)
+	{
+		if ($key_case->is_plural == '1')
+		{
+			$plural_suffixes = $suffixes_data->plural_suffixes;
+			$cases_0         = $suffixes_data->cases_0;
+			$cases_1         = $suffixes_data->cases_1;
+			$cases_other     = $suffixes_data->cases_other;
+			$cases_more      = $suffixes_data->cases_more;
+			$plural_suffix   = $key_case->suffix;
+
+			if (in_array($plural_suffix, $cases_0))
+			{
+				$equal_suffixes = $cases_0;
+			}
+			else if (in_array($plural_suffix, $cases_1))
+			{
+				$equal_suffixes = $cases_1;
+			}
+			else if (in_array($plural_suffix, $cases_other))
+			{
+				$equal_suffixes = $cases_other;
+			}
+			else if (in_array($plural_suffix, $cases_more))
+			{
+				$equal_suffixes = $cases_more;
+			}
+			else
+			{
+				$equal_suffixes = array();
+			}
+
+			if (!empty($equal_suffixes))
+			{
+				unset($equal_suffixes[$plural_suffix]);
+			}
+
+			if (!empty($equal_suffixes))
+			{
+				foreach ($equal_suffixes as $equal_suffix)
+				{
+					$duplicated_plural = $key_case->root_key . '_' . $equal_suffix;
+
+					if (in_array($duplicated_plural, $ref_keys_only))
+					{
+						$personalised_plural = $key_case->root_key . '_' . $plural_suffix;
+
+						$message = "Duplicated plural case detected. The plural:<br>"
+									. $duplicated_plural
+									. "<br>possibly will show the translation before your presonalised plural for:<br>"
+									. $key_case->root_key
+									. '_'
+									. $plural_suffix;
+
+						Factory::getApplication()->enqueueMessage(
+							Text::_($message),
+							'warning');
+
+						if (!in_array($duplicated_plural, $duplicatedkeys))
+						{
+							$duplicatedkeys[] = $duplicated_plural;
+						}
+
+						if (!in_array($personalised_plural, $duplicatedkeys))
+						{
+							$duplicatedkeys[] = $personalised_plural;
+						}
+					}
+				}
+			}
+		}
+
+		return;
 	}
 }

@@ -62,6 +62,12 @@ class DevelopField extends ListField
 		$options[] = HTMLHelper::_('select.option', 'incomplete', Text::sprintf('COM_LOCALISE_OPTION_TRANSLATIONS_DEVELOP_INCOMPLETE'),
 					array('option.attr' => 'attributes', 'attr' => 'class="iconlist-16-changed"')
 					);
+		$options[] = HTMLHelper::_('select.option', 'plural', Text::sprintf('COM_LOCALISE_OPTION_TRANSLATIONS_DEVELOP_PLURAL'),
+					array('option.attr' => 'attributes', 'attr' => 'class="iconlist-16-plural"')
+					);
+		$options[] = HTMLHelper::_('select.option', 'issued', Text::sprintf('COM_LOCALISE_OPTION_TRANSLATIONS_DEVELOP_ISSUED'),
+					array('option.attr' => 'attributes', 'attr' => 'class="iconlist-16-issued"')
+					);
 
 		return $options;
 	}

@@ -72,6 +72,27 @@ $has_translatedkeys   = !empty($this->item->translatedkeys) ? 1 : 0;
 $has_untranslatedkeys = !empty($this->item->untranslatedkeys) ? 1 : 0;
 $has_unchangedkeys    = !empty($this->item->unchangedkeys) ? 1 : 0;
 $has_textchangedkeys  = !empty($this->item->textchangedkeys) ? 1 : 0;
+$has_extrakeys        = !empty($this->item->extrakeys) ? 1 : 0;
+$has_deletedkeys      = 0;
+$has_renamedkeys      = 0;
+$has_pluralkeys       = 0;
+$has_issuedkeys       = 0;
+
+if ($istranslation == 1 && $ref_tag == 'en-GB')
+{
+	$has_deletedkeys      = !empty($this->item->deletedkeys) ? 1 : 0;
+	$has_renamedkeys      = !empty($this->item->renamedkeys) ? 1 : 0;
+	$has_pluralkeys       = !empty($this->item->pluralkeys) ? 1 : 0;
+	$has_issuedkeys       = !empty($this->item->issuedkeys) ? 1 : 0;
+	$has_unchecked        = ($this->item->unchecked > 0) ? 1 : 0;
+
+	if ($has_unchecked == 1)
+	{
+		Factory::getApplication()->enqueueMessage(
+			Text::sprintf('COM_LOCALISE_NOTICE_EDIT_UNCHECKED_PARSING_ISSUES', $this->item->unchecked),
+			'warning');
+	}
+}
 
 if (isset($posted['select']['keystatus'])
 	&& !empty($posted['select']['keystatus'])
@@ -115,6 +136,11 @@ if ($istranslation)
 				var has_untranslatedkeys = " . $has_untranslatedkeys . ";
 				var has_unchangedkeys    = " . $has_unchangedkeys . ";
 				var has_textchangedkeys  = " . $has_textchangedkeys . ";
+				var has_extrakeys        = " . $has_extrakeys . ";
+				var has_deletedkeys      = " . $has_deletedkeys . ";
+				var has_renamedkeys      = " . $has_renamedkeys . ";
+				var has_pluralkeys       = " . $has_pluralkeys . ";
+				var has_issuedkeys       = " . $has_issuedkeys . ";
 
 				if (has_translatedkeys == '0')
 				{
@@ -134,6 +160,31 @@ if ($istranslation)
 				if (has_textchangedkeys == '0')
 				{
 					var x = document.getElementById('jform_select_keystatus').options[5].disabled = true;
+				}
+
+				if (has_pluralkeys == '0')
+				{
+					var x = document.getElementById('jform_select_keystatus').options[6].disabled = true;
+				}
+
+				if (has_renamedkeys == '0')
+				{
+					var x = document.getElementById('jform_select_keystatus').options[7].disabled = true;
+				}
+
+				if (has_deletedkeys == '0')
+				{
+					var x = document.getElementById('jform_select_keystatus').options[8].disabled = true;
+				}
+
+				if (has_extrakeys == '0')
+				{
+					var x = document.getElementById('jform_select_keystatus').options[9].disabled = true;
+				}
+
+				if (has_issuedkeys == '0')
+				{
+					var x = document.getElementById('jform_select_keystatus').options[10].disabled = true;
 				}
 			});
 		})(jQuery);
@@ -244,13 +295,38 @@ Factory::getDocument()->addScriptDeclaration("
 									$i = 0;
 									foreach ($sections as $name => $fieldSet) :
 										echo HTMLHelper::_('bootstrap.addSlide', 'localise-translation-sliders', Text::_($fieldSet->label), 'collapse' . $i++);
-										if ($fieldSet->label == "COM_LOCALISE_TEXT_TRANSLATION_NOTINREFERENCE") : ?>
+										if ($fieldSet->label == "COM_LOCALISE_TEXT_TRANSLATION_EXTRA") : ?>
 											<div class="alert alert-info">
-												<span class="fas fa-info-circle info-line" aria-hidden="true"></span><span class="sr-only"><?php echo Text::_('INFO'); ?></span>
+												<span class="fas fa-info-circle info-line" aria-hidden="true"></span><span class="sr-only">
+												<?php echo Text::_('INFO'); ?></span>
 												<?php if ($istranslation) : ?>
 													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_EXTRA_KEYS_IN_TRANSLATION'); ?>
 												<?php else : ?>
 													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_KEYS_TO_DELETE'); ?>
+												<?php endif; ?>
+											</div>
+										<?php elseif ($fieldSet->label == "COM_LOCALISE_TEXT_TRANSLATION_PERSONALISED") : ?>
+											<div class="alert alert-info">
+												<span class="fas fa-info-circle info-line" aria-hidden="true"></span><span class="sr-only">
+												<?php echo Text::_('INFO'); ?></span>
+												<?php if ($istranslation) : ?>
+													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_PERSONALISED_KEYS_IN_TRANSLATION'); ?>
+												<?php endif; ?>
+											</div>
+										<?php elseif ($fieldSet->label == "COM_LOCALISE_TEXT_TRANSLATION_RENAMED") : ?>
+											<div class="alert alert-info">
+												<span class="fas fa-info-circle info-line" aria-hidden="true"></span><span class="sr-only">
+												<?php echo Text::_('INFO'); ?></span>
+												<?php if ($istranslation) : ?>
+													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_RENAMED_KEYS_IN_TRANSLATION'); ?>
+												<?php endif; ?>
+											</div>
+										<?php elseif ($fieldSet->label == "COM_LOCALISE_TEXT_TRANSLATION_DELETED") : ?>
+											<div class="alert alert-info">
+												<span class="fas fa-info-circle info-line" aria-hidden="true"></span><span class="sr-only">
+												<?php echo Text::_('INFO'); ?></span>
+												<?php if ($istranslation) : ?>
+													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_DELETED_KEYS_IN_TRANSLATION'); ?>
 												<?php endif; ?>
 											</div>
 										<?php endif; ?>
@@ -267,16 +343,11 @@ Factory::getDocument()->addScriptDeclaration("
 									?>
 								<?php elseif (count($sections) > 1 && $filter != 'allkeys') :
 									echo '<div class="clearfix"></div>';
-									foreach ($sections as $name => $fieldSet) :
-										if ($fieldSet->label == "COM_LOCALISE_TEXT_TRANSLATION_NOTINREFERENCE" && $filter == 'extra') : ?>
-											<div class="alert alert-info">
-												<span class="fas fa-info-circle info-line" aria-hidden="true"></span><span class="sr-only"><?php echo Text::_('INFO'); ?></span>
-												<?php if ($istranslation) : ?>
-													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_EXTRA_KEYS_IN_TRANSLATION'); ?>
-												<?php else : ?>
-													<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_KEYS_TO_DELETE'); ?>
-												<?php endif; ?>
-											</div>
+									$display_section_comment = true;
+									foreach ($sections as $name => $fieldSet) : ?>
+										<?php if ($istranslation && $display_section_comment == true) : ?>
+											<?php $display_section_comment = false; ?>
+											<?php echo LocaliseHelper::getSectionHtmlOutput($name, $filter); ?>
 										<?php endif; ?>
 										<div class="table-responsive"><table class="table table-hover"><tbody>
 											<?php foreach ($this->form->getFieldset($name) as $field) :
@@ -316,6 +387,7 @@ Factory::getDocument()->addScriptDeclaration("
 		</div>
 		<!-- End Localise Translation -->
 		<input type="hidden" name="task" value="" />
+		<input type="hidden" name="falsepositive" value="" />
 		<input type="hidden" name="notinref" value="" />
 		<input type="hidden" name="tabstate" value="" />
 		<?php echo HTMLHelper::_('form.token'); ?>

@@ -817,23 +817,33 @@ class TranslationsModel extends ListModel
 					$untranslateds_amount = $item->untranslated;
 					$translated_news      = $item->translatednews;
 					$unchanged_news       = $item->unchangednews;
-					$extras_amount        = 0;
+					$news_amount          = 0;
 					$unrevised_changes    = 0;
 					$have_develop         = 0;
 
 					if (!empty($developdata))
 					{
-						$extras_amount     = $developdata['extra_keys']['amount'];
+						$news_amount       = $developdata['new_keys']['amount'];
 						$unrevised_changes = $developdata['text_changes']['unrevised'];
 					}
 
-					if (($extras_amount > 0 && $extras_amount > $translated_news + $unchanged_news) || $unrevised_changes > 0 || $untranslateds_amount > 0)
+					if (($news_amount > 0 && $news_amount > $translated_news + $unchanged_news) || $unrevised_changes > 0 || $untranslateds_amount > 0)
 					{
 						$have_develop = 1;
 						$item->complete = 0;
 					}
 
-					if ($filter_develop == 'complete' && $item->complete == 0)
+					if ($filter_develop == 'issued' && $item->issued == 0)
+					{
+						unset($this->translations[$key]);
+						continue;
+					}
+					elseif ($filter_develop == 'plural' && $item->plural == 0)
+					{
+						unset($this->translations[$key]);
+						continue;
+					}
+					elseif ($filter_develop == 'complete' && $item->complete == 0)
 					{
 						unset($this->translations[$key]);
 						continue;

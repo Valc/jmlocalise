@@ -44,7 +44,15 @@ class LegendField extends FormField
 					. '" readonly="readonly"/></td></tr>';
 		$return .= '<tr><td><input class="untranslated" size="30"  type="text" value="' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_UNTRANSLATED')
 					. '" readonly="readonly"/></td></tr>';
-		$return .= '<tr><td><input class="extra" size="30" type="text" value="' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_NOTINREFERENCE')
+		$return .= '<tr><td><p>' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_NOTINREF_CASES')
+					. '</p></td></tr>';
+		$return .= '<tr><td><input class="plural" size="30" type="text" value="' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_PERSONALISED_PLURAL')
+					. '" readonly="readonly"/></td></tr>';
+		$return .= '<tr><td><input class="renamed" size="30" type="text" value="' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_RENAMED')
+					. '" readonly="readonly"/></td></tr>';
+		$return .= '<tr><td><input class="deleted" size="30" type="text" value="' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_DELETED')
+					. '" readonly="readonly"/></td></tr>';
+		$return .= '<tr><td><input class="extra" size="30" type="text" value="' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_EXTRA')
 					. '" readonly="readonly"/></td></tr>';
 		$return .= '</table>';
 

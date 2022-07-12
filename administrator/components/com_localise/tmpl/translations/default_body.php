@@ -35,13 +35,14 @@ $max_vars = ini_get('max_input_vars');
 	<?php endif; ?>
 	<?php $canEdit = $user->authorise('localise.edit', 'com_localise' . (isset($item->id) ? ('.' . $item->id) : '')); ?>
 	<?php $istranslation = $item->istranslation; ?>
+	<?php $issues_amount = $item->issued; ?>
 	<?php if (!empty($item->developdata)) :
-		$extras_amount = $item->developdata;
+		$news_amount = $item->developdata;
 		$text_changes_amount = $item->developdata;
-		$extras_amount = $extras_amount['extra_keys']['amount'];
+		$news_amount = $news_amount['new_keys']['amount'];
 		$text_changes_amount = $text_changes_amount['text_changes']['amount'];
 	else :
-		$extras_amount = 0;
+		$news_amount         = 0;
 		$text_changes_amount = 0;
 	endif; ?>
 	<tr class="<?php echo $item->state; ?> row<?php echo $i % 2; ?>">
@@ -147,22 +148,22 @@ $max_vars = ini_get('max_input_vars');
 			<?php elseif ($item->tag == $reference) : ?>
 				<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_REFERENCE'), 'inactive_class'=>'16-reference', 'enabled' => false, 'translate'=>false)); ?>
 			<?php elseif ($item->complete) : ?>
-				<?php if ($extras_amount > 0 || $text_changes_amount > 0) : ?>
-					<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_COMPLETE_WITH_DEVELOP', $item->translated, $item->unchanged, $extras_amount, $text_changes_amount, $item->total, $item->extra), 'inactive_class'=>'16-complete', 'enabled' => false, 'translate'=>false)); ?>
+				<?php if ($news_amount > 0 || $text_changes_amount > 0) : ?>
+					<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_COMPLETE_WITH_DEVELOP', $item->translated, $item->unchanged, $news_amount, $text_changes_amount, $item->total, $item->renamed, $item->deleted, $item->extra, $issues_amount), 'inactive_class'=>'16-complete', 'enabled' => false, 'translate'=>false)); ?>
 				<?php else : ?>
 					<?php $is_emptyFile = empty(file_get_contents($item->refpath)); ?>
 					<?php if ($is_emptyFile) : ?>
 						<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_ERROR_REFERENCE_FILE_EMPTY', substr($item->refpath, strlen(JPATH_ROOT)), substr($item->path, strlen(JPATH_ROOT))), 'inactive_class'=>'16-error', 'enabled' => false, 'translate'=>false)); ?>
 					<?php else : ?>
-						<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_COMPLETE', $item->translated, $item->unchanged, $item->total, $item->extra), 'inactive_class'=>'16-complete', 'enabled' => false, 'translate'=>false)); ?>
+						<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_COMPLETE', $item->translated, $item->unchanged, $item->total, $item->extra, $issues_amount), 'inactive_class'=>'16-complete', 'enabled' => false, 'translate'=>false)); ?>
 					<?php endif; ?>
 				<?php endif; ?>
 			<?php else : ?>
-				<?php if ($extras_amount > 0 || $text_changes_amount > 0) : ?>
-					<?php $tip = $item->translated + $item->unchanged == 0 ? Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_NOTSTARTED') : Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_INPROGRESS_WITH_DEVELOP', $item->translated, $item->unchanged, $extras_amount, $text_changes_amount, $item->total, $item->extra); ?>
+				<?php if ($news_amount > 0 || $text_changes_amount > 0) : ?>
+					<?php $tip = $item->translated + $item->unchanged == 0 ? Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_NOTSTARTED') : Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_INPROGRESS_WITH_DEVELOP', $item->translated, $item->unchanged, $news_amount, $text_changes_amount, $item->total, $item->renamed, $item->deleted, $item->extra, $issues_amount); ?>
 					<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=> $tip, 'inactive_class' => '16-info', 'enabled' => false, 'translate' => false)); ?>
 				<?php else : ?>
-					<?php $tip = $item->translated + $item->unchanged == 0 ? Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_NOTSTARTED') : Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_INPROGRESS', $item->translated, $item->unchanged, $item->total, $item->extra); ?>
+					<?php $tip = $item->translated + $item->unchanged == 0 ? Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_NOTSTARTED') : Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_INPROGRESS', $item->translated, $item->unchanged, $item->total, $item->extra, $issues_amount); ?>
 					<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=> $tip, 'inactive_class' => '16-info', 'enabled' => false, 'translate' => false)); ?>
 				<?php endif; ?>
 				<?php $unrevised = $item->total ? intval(100 * $item->unrevised / $item->total) : 0; ?>
@@ -186,45 +187,45 @@ $max_vars = ini_get('max_input_vars');
 					<?php else : ?>
 						<?php echo $translated; ?> %
 					<?php endif; ?>
-					<div style="text-align:left;border:solid silver 1px;width:100px;height:4px;">
-						<div class="pull-left" style="height:100%; width:<?php echo $translated; ?>% ;background:green;">
+					<div style="text-align:left;border:solid silver 1px;width:100px;height:6px;">
+						<div class="float-start" style="height:100%; width:<?php echo $translated; ?>% ;background:green;">
 						</div>
-						<div class="pull-left" style="height:100%; width:<?php echo $unchanged; ?>% ;background:orange;">
+						<div class="float-start" style="height:100%; width:<?php echo $unchanged; ?>% ;background:orange;">
 						</div>
-						<div class="pull-left" style="height:100%; width:<?php echo $unrevised; ?>% ;background:yellow;">
+						<div class="float-start" style="height:100%; width:<?php echo $unrevised; ?>% ;background:yellow;">
 						</div>
-						<div class="pull-left" style="height:100%; width:<?php echo $untranslated; ?>% ;background:red;">
+						<div class="float-start" style="height:100%; width:<?php echo $untranslated; ?>% ;background:red;">
 						</div>
 					</div>
 					<div class="clr"></div>
 				</span>
 			<?php endif; ?>
-			<?php if ($extras_amount > 0 || $text_changes_amount > 0) : ?>
+			<?php if ($news_amount > 0 || $text_changes_amount > 0) : ?>
 			<?php $revised = $text_changes_amount - $item->unrevised; $translatednews = $item->translatednews + $item->unchangednews; ?>
-				<?php if ($extras_amount > 0 && $text_changes_amount > 0) : ?>
+				<?php if ($news_amount > 0 && $text_changes_amount > 0) : ?>
 					<?php if ($istranslation == 1) : ?>
-						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_1', $translatednews, $extras_amount, $revised, $text_changes_amount); ?>"></span>
+						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_1', $translatednews, $news_amount, $revised, $text_changes_amount); ?>"></span>
 					<?php else : ?>
-						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_1_EN_GB', $extras_amount, $revised, $text_changes_amount); ?>"></span>
+						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_1_EN_GB', $news_amount, $revised, $text_changes_amount); ?>"></span>
 					<?php endif; ?>
-				<?php elseif ($extras_amount == 0 && $text_changes_amount > 0) : ?>
+				<?php elseif ($news_amount == 0 && $text_changes_amount > 0) : ?>
 					<?php if ($istranslation == 1) : ?>
 						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_2', $revised, $text_changes_amount); ?>"></span>
 					<?php else : ?>
 						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_2_EN_GB', $revised, $text_changes_amount); ?>"></span>
 					<?php endif; ?>
-				<?php elseif ($extras_amount > 0 && $text_changes_amount ==  0) : ?>
+				<?php elseif ($news_amount > 0 && $text_changes_amount ==  0) : ?>
 					<?php if ($istranslation == 1) : ?>
-						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_3', $translatednews, $extras_amount); ?>"></span>
+						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_3', $translatednews, $news_amount); ?>"></span>
 					<?php else : ?>
-						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_3_EN_GB', $extras_amount); ?>"></span>
+						<br /><span class="icon-16-notice-note hasTooltip" title="<?php echo Text::sprintf('COM_LOCALISE_TOOLTIP_GITHUB_CASE_3_EN_GB', $news_amount); ?>"></span>
 					<?php endif; ?>
 				<?php endif; ?>
 			<?php endif; ?>
 		</td>
 		<td dir="ltr" class="center">
 			<?php if ($item->state != 'error') : ?>
-				<?php if ($item->state == 'notinreference') : ?>
+				<?php if ($item->state == 'extra') : ?>
 					<?php echo $item->extra; ?>
 				<?php elseif ($item->type == 'override') : ?>
 				<?php
