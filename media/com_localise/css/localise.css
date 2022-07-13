@@ -7,7 +7,12 @@
 #localise-translation-form .translated,
 #localise-translation-form .untranslated,
 #localise-translation-form .unchanged,
-#localise-translation-form .extra {
+#localise-translation-form .extra,
+#localise-translation-form .deleted,
+#localise-translation-form .renamed,
+#localise-translation-form .plural,
+#localise-translation-form .personalised,
+#localise-translation-form .issued {
 	padding: 2px;
 	float: left;
 	margin: 3px 0 0 2px;
@@ -23,6 +28,21 @@
 }
 #localise-translation-form .extra {
 	background-color:#CCCCFF;
+}
+#localise-translation-form .deleted {
+	background-color:#FD6D83;
+}
+#localise-translation-form .renamed {
+	background-color:#F9B17E;
+}
+#localise-translation-form .plural {
+	background-color:#CBEDD2;
+}
+#localise-translation-form .personalised {
+	background-color:#CBEDD2;
+}
+#localise-translation-form .issued {
+	background-color:#FF7F50;
 }
 #localise-translation-form .width-50 {
 	width: 50%;
@@ -51,6 +71,21 @@
 	width: 45%;
 	max-width: 45%;
 	min-width: 45%;
+}
+textarea.translated,
+textarea.untranslated,
+textarea.unchanged,
+textarea.personalised {
+height: 7em;
+}
+textarea.deleted,
+textarea.renamed,
+textarea.extra {
+height: 5em;
+}
+.edition-comment > label{
+  color:darkgray !important;
+  font-size: 1.4rem !important;
 }
 .rtl {
 	text-align: right !important;
@@ -316,9 +351,6 @@ div.filter-select select {
 	font-size: 10pt;
 	color: black;
 }
-.edition-comment {
-  color:darkgray;
-}
 pre.code,
 .editbox {
 	color: #666666;
@@ -381,7 +413,7 @@ ul.adminformlist li {
 border: 1px dashed gray !important;
 background-color: #FFFFCC;
 margin-top: 0em;
-padding: 0.5em;
+padding: 0.2em;
 }
 .diff_del {
 background-color: #E3A0AB !important;
@@ -446,4 +478,62 @@ span.extra::before {
   font-size: .90rem;
   font-weight: 400;
   line-height: normal;
+}
+/* All disabled options list */
+option:disabled {
+  color: darkgrey !important;
+}
+/* Issued strings output */
+div.engb-string {
+  border: 1px dashed gray !important;
+  background-color: #CCFFCC;
+  margin-top: 0em;
+  padding: 1em;
+  font-weight: normal !important;
+  -ms-word-break: break-all;
+  word-break: break-all;
+  word-break: break-word;
+
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+div.ttms-string {
+  border: 1px dashed gray !important;
+  background-color: #eaf0f8;
+  padding: 1em;
+  font-weight: normal !important;
+  -ms-word-break: break-all;
+  word-break: break-all;
+  word-break: break-word;
+  margin-top: 0em;
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+div.details-string {
+  border: 1px dashed gray !important;
+  background-color: #FFFFCC;
+  margin-top: 0em;
+  padding: 1em;
+  font-weight: normal !important;
+  -ms-word-break: break-all;
+  word-break: break-all;
+  word-break: break-word;
+
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+p.nomargin {
+  margin: 0;
 }
