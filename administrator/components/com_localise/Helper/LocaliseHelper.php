@@ -3600,7 +3600,6 @@ abstract class LocaliseHelper
 		return $suffixes_data;
 	}
 
-
 	/**
 	 * Search for duplicated plural cases.
 	 *
@@ -3653,16 +3652,15 @@ abstract class LocaliseHelper
 					{
 						$personalised_plural = $key_case->root_key . '_' . $plural_suffix;
 
+						// Used for debugging pruposes
 						$message = "Duplicated plural case detected. The plural:<br>"
 									. $duplicated_plural
-									. "<br>possibly will show the translation before your presonalised plural for:<br>"
-									. $key_case->root_key
-									. '_'
-									. $plural_suffix;
+									. "<br>matches with the presonalised plural for:<br>"
+									. $personalised_plural;
 
-						Factory::getApplication()->enqueueMessage(
-							Text::_($message),
-							'warning');
+						//Factory::getApplication()->enqueueMessage(
+						//	Text::_($message),
+						//	'warning');
 
 						if (!in_array($duplicated_plural, $duplicatedkeys))
 						{
