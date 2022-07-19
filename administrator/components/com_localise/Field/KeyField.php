@@ -84,16 +84,18 @@ class KeyField extends FormField
 		// Set the class for the label.
 		$class         = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
 
-		$istranslation   = (int) $this->element['istranslation'];
-		$status          = (string) $this->element['status'];
-		$istextchange    = (int) $field_data->is_textchange;
-		$isissued        = (int) $field_data->is_issued;
-		$is_comment      = false;
-		$is_new          = (string) $this->element['isextraindev'];
-		$is_plural       = (string) $this->element['isplural'];
-		$is_root         = (string) $this->element['isroot'];
-		$is_personalised = (string) $this->element['ispersonalised'];
-		$is_duplicated   = (string) $this->element['isduplicated'];
+		$istranslation         = (int) $this->element['istranslation'];
+		$status                = (string) $this->element['status'];
+		$istextchange          = (int) $field_data->is_textchange;
+		$isissued              = (int) $field_data->is_issued;
+		$is_comment            = false;
+		$is_new                = (string) $this->element['isextraindev'];
+		$is_plural             = (string) $this->element['isplural'];
+		$is_root               = (string) $this->element['isroot'];
+		$is_personalised       = (string) $this->element['ispersonalised'];
+		$is_duplicated         = (string) $this->element['isduplicated'];
+		$is_deleted_at_storage = (string) $this->element['isdeletedstorage'];
+		$is_renamed_at_storage = (string) $this->element['isrenamedstorage'];
 
 		if ($is_new == 1)
 		{
@@ -360,7 +362,24 @@ class KeyField extends FormField
 			$label .= $this->element['label'];
 			$label .= '</label></div>';
 
-			$field_data->field_details .= '<span class="badge bg-danger">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($status)) . '</span>';
+			if ($is_deleted_at_storage == 1)
+			{
+				$field_data->field_details .= '<span class="badge bg-info">'
+					. Text::_('COM_LOCALISE_TEXT_TRANSLATION_STORED_DELETED_CASE_AT_TAB')
+					. '</span>';
+			}
+			else
+			{
+				$field_data->field_details .= '<span class="badge bg-info">'
+					. Text::_('COM_LOCALISE_TEXT_TRANSLATION_CURRENT_DELETED_CASE_AT_TAB')
+					. '</span>';
+			}
+
+			$field_data->field_details .= '<span class="badge bg-danger">'
+				. Text::_('COM_LOCALISE_TEXT_TRANSLATION_'
+				. strtoupper($status))
+				. '</span>';
+
 			$field_data->field_label    = $label;
 			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
 
@@ -402,6 +421,19 @@ class KeyField extends FormField
 			$label .= '" class="' . $class . '">';
 			$label .= $this->element['label'];
 			$label .= '</label></div>';
+
+			if ($is_renamed_at_storage == 1)
+			{
+				$field_data->field_details .= '<span class="badge bg-info">'
+					. Text::_('COM_LOCALISE_TEXT_TRANSLATION_STORED_RENAMED_CASE_AT_TAB')
+					. '</span>';
+			}
+			else
+			{
+				$field_data->field_details .= '<span class="badge bg-info">'
+					. Text::_('COM_LOCALISE_TEXT_TRANSLATION_CURRENT_RENAMED_CASE_AT_TAB')
+					. '</span>';
+			}
 
 			$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($status)) . '</span>';
 			$field_data->field_label    = $label;
@@ -544,7 +576,14 @@ class KeyField extends FormField
 
 		if (!empty($commented))
 		{
-			$commented = '<div> <span class="badge bg-info">' . $commented . '</span></div>';
+			if (strlen($commented) > 75)
+			{
+				$commented = '<div> <span class="word-break-width-100 edition-commented">' . $commented . '</span></div>';
+			}
+			else
+			{
+				$commented = '<div> <span class="badge bg-info">' . $commented . '</span></div>';
+			}
 		}
 		else
 		{

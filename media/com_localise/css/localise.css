@@ -87,6 +87,15 @@ height: 5em;
   color:darkgray !important;
   font-size: 1.4rem !important;
 }
+.edition-commented {
+  border-radius: 0.2rem;
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.3rem 0.2rem;
+  background-color:#2A69B8;
+  color:white;
+}
 .rtl {
 	text-align: right !important;
 	direction: rtl !important;
@@ -536,4 +545,7 @@ div.details-string {
 }
 p.nomargin {
   margin: 0;
+}
+joomla-tab>joomla-tab-element {
+    padding: 15px 1vw !important;
 }

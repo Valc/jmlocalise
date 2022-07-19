@@ -191,6 +191,9 @@ class TranslationModel extends AdminModel
 				$refpath       = $this->getState('translation.refpath');
 				$istranslation = 0;
 
+				$stored_deleted_keys = array();
+				$stored_renamed_keys = array();
+
 				if (!empty($tag) && $tag != $reftag)
 				{
 					$istranslation = 1;
@@ -204,6 +207,8 @@ class TranslationModel extends AdminModel
 				$this->setState('translation.extrakeys', array());
 				$this->setState('translation.deletedkeys', array());
 				$this->setState('translation.renamedkeys', array());
+				$this->setState('translation.storeddeletedkeys', array());
+				$this->setState('translation.storedrenamedkeys', array());
 				$this->setState('translation.pluralkeys', array());
 				$this->setState('translation.rootkeys', array());
 				$this->setState('translation.regularkeys', array());
@@ -213,22 +218,24 @@ class TranslationModel extends AdminModel
 				$this->setState('translation.issueddata', array());
 				$this->setState('translation.developdata', array());
 
-				$translatedkeys   = $this->getState('translation.translatedkeys');
-				$untranslatedkeys = $this->getState('translation.untranslatedkeys');
-				$unchangedkeys    = $this->getState('translation.unchangedkeys');
-				$extrakeys        = $this->getState('translation.extrakeys');
-				$deletedkeys      = $this->getState('translation.deletedkeys');
-				$renamedkeys      = $this->getState('translation.renamedkeys');
-				$pluralkeys       = $this->getState('translation.pluralkeys');
-				$rootkeys         = $this->getState('translation.rootkeys');
-				$regularkeys      = $this->getState('translation.regularkeys');
-				$personalisedkeys = $this->getState('translation.personalisedkeys');
-				$duplicatedkeys   = $this->getState('translation.duplicatedkeys');
-				$issuedkeys       = $this->getState('translation.issuedkeys');
-				$issueddata       = $this->getState('translation.issueddata');
-				$textchangedkeys  = $this->getState('translation.textchangedkeys');
-				$revisedchanges   = $this->getState('translation.revisedchanges');
-				$developdata      = $this->getState('translation.developdata');
+				$translatedkeys    = $this->getState('translation.translatedkeys');
+				$untranslatedkeys  = $this->getState('translation.untranslatedkeys');
+				$unchangedkeys     = $this->getState('translation.unchangedkeys');
+				$extrakeys         = $this->getState('translation.extrakeys');
+				$deletedkeys       = $this->getState('translation.deletedkeys');
+				$renamedkeys       = $this->getState('translation.renamedkeys');
+				$storeddeletedkeys = $this->getState('translation.storeddeletedkeys');
+				$storedrenamedkeys = $this->getState('translation.storedrenamedkeys');
+				$pluralkeys        = $this->getState('translation.pluralkeys');
+				$rootkeys          = $this->getState('translation.rootkeys');
+				$regularkeys       = $this->getState('translation.regularkeys');
+				$personalisedkeys  = $this->getState('translation.personalisedkeys');
+				$duplicatedkeys    = $this->getState('translation.duplicatedkeys');
+				$issuedkeys        = $this->getState('translation.issuedkeys');
+				$issueddata        = $this->getState('translation.issueddata');
+				$textchangedkeys   = $this->getState('translation.textchangedkeys');
+				$revisedchanges    = $this->getState('translation.revisedchanges');
+				$developdata       = $this->getState('translation.developdata');
 
 				$this->item = new CMSObject(
 									array
@@ -256,6 +263,8 @@ class TranslationModel extends AdminModel
 										'extrakeys'           => (array) $extrakeys,
 										'deletedkeys'         => (array) $deletedkeys,
 										'renamedkeys'         => (array) $renamedkeys,
+										'storeddeletedkeys'   => (array) $storeddeletedkeys,
+										'storedrenamedkeys'   => (array) $storedrenamedkeys,
 										'pluralkeys'          => (array) $pluralkeys,
 										'rootkeys'            => (array) $rootkeys,
 										'regularkeys'         => (array) $regularkeys,
@@ -273,6 +282,8 @@ class TranslationModel extends AdminModel
 										'extra'               => 0,
 										'deleted'             => 0,
 										'renamed'             => 0,
+										'storeddeleted'       => 0,
+										'storedrenamed'       => 0,
 										'plural'              => 0,
 										'issued'              => 0,
 										'total'               => 0,
@@ -610,6 +621,9 @@ class TranslationModel extends AdminModel
 						$enGB_deletedkeys = $developdata['deleted_keys'];
 						$enGB_renamedkeys = $developdata['renamed_keys'];
 
+						$stored_deleted_keys = LocaliseHelper::getKnownDeletedKeysList();
+						$stored_renamed_keys = LocaliseHelper::getKnownRenamedKeysList($client = $info['client']);
+
 						// Handling the extra en-GB keys ('New' ones) in development
 						// and the changed strings between the seleted en-GB release and branch.
 						if ($developdata['new_keys']['amount'] > 0  || $developdata['text_changes']['amount'] > 0)
@@ -943,19 +957,27 @@ class TranslationModel extends AdminModel
 						{
 							if (empty($refsections['keys']) || !array_key_exists($key, $refsections['keys']))
 							{
-
 								$key_case = LocaliseHelper::isPlural($plural_suffixes, $key, $rootkeys);
-
 
 								if (!empty($enGB_renamedkeys) && $enGB_renamedkeys['amount'] > 0 && in_array($key, $enGB_renamedkeys['keys']))
 								{
 									$renamedkeys[] = $key;
 									$this->item->renamed++;
 								}
+								elseif (in_array($key, $stored_renamed_keys))
+								{
+									$storedrenamedkeys[] = $key;
+									$this->item->storedrenamed++;
+								}
 								elseif (!empty($enGB_deletedkeys) && $enGB_deletedkeys['amount'] > 0 && in_array($key, $enGB_deletedkeys['keys']))
 								{
 									$deletedkeys[] = $key;
 									$this->item->deleted++;
+								}
+								elseif (in_array($key, $stored_deleted_keys))
+								{
+									$storeddeletedkeys[] = $key;
+									$this->item->storeddeleted++;
 								}
 								elseif ($key_case && $key_case->is_plural == true)
 								{
@@ -973,22 +995,26 @@ class TranslationModel extends AdminModel
 						}
 					}
 
-					$this->item->developdata      = $developdata;
-					$this->item->extrakeys        = $extrakeys;
-					$this->item->deletedkeys      = $deletedkeys;
-					$this->item->renamedkeys      = $renamedkeys;
-					$this->item->pluralkeys       = $pluralkeys;
-					$this->item->rootkeys         = $rootkeys;
-					$this->item->regularkeys      = $regularkeys;
-					$this->item->personalisedkeys = $personalisedkeys;
-					$this->item->duplicatedkeys   = $duplicatedkeys;
-					$this->item->issuedkeys       = $issuedkeys;
-					$this->item->issueddata       = $issueddata;
+					$this->item->developdata       = $developdata;
+					$this->item->extrakeys         = $extrakeys;
+					$this->item->deletedkeys       = $deletedkeys;
+					$this->item->renamedkeys       = $renamedkeys;
+					$this->item->storeddeletedkeys = $storeddeletedkeys;
+					$this->item->storedrenamedkeys = $storedrenamedkeys;
+					$this->item->pluralkeys        = $pluralkeys;
+					$this->item->rootkeys          = $rootkeys;
+					$this->item->regularkeys       = $regularkeys;
+					$this->item->personalisedkeys  = $personalisedkeys;
+					$this->item->duplicatedkeys    = $duplicatedkeys;
+					$this->item->issuedkeys        = $issuedkeys;
+					$this->item->issueddata        = $issueddata;
 
 					$this->setState('translation.developdata', $developdata);
 					$this->setState('translation.extrakeys', $extrakeys);
 					$this->setState('translation.deletedkeys', $deletedkeys);
 					$this->setState('translation.renamedkeys', $renamedkeys);
+					$this->setState('translation.storeddeletedkeys', $storeddeletedkeys);
+					$this->setState('translation.rstoredenamedkeys', $storedrenamedkeys);
 					$this->setState('translation.pluralkeys', $pluralkeys);
 					$this->setState('translation.rootkeys', $rootkeys);
 					$this->setState('translation.regularkeys', $regularkeys);
@@ -1159,6 +1185,8 @@ class TranslationModel extends AdminModel
 		$revisedchanges         = array();
 		$deletedkeys            = array();
 		$renamedkeys            = array();
+		$storeddeletedkeys      = array();
+		$storedrenamedkeys      = array();
 		$pluralkeys             = array();
 		$rootkeys               = array();
 		$regularkeys            = array();
@@ -1169,6 +1197,8 @@ class TranslationModel extends AdminModel
 		$extrakeys              = array();
 		$replacements           = array();
 		$replacements_keys      = array();
+		$stored_deleted_keys    = array();
+		$stored_renamed_keys    = array();
 		$istranslation          = '';
 		$new_in_dev_amount      = 0;
 		$deleted_in_dev_amount  = 0;
@@ -1176,6 +1206,8 @@ class TranslationModel extends AdminModel
 		$text_changes_amount    = 0;
 		$deleted                = 0;
 		$renamed                = 0;
+		$storeddeleted          = 0;
+		$storedrenamed          = 0;
 		$plural                 = 0;
 		$extra                  = 0;
 		$reflang                = '';
@@ -1204,6 +1236,8 @@ class TranslationModel extends AdminModel
 			$revisedchanges      = $item->revisedchanges;
 			$deletedkeys         = $item->deletedkeys;
 			$renamedkeys         = $item->renamedkeys;
+			$storeddeletedkeys   = $item->storeddeletedkeys;
+			$storedrenamedkeys   = $item->storedrenamedkeys;
 			$pluralkeys          = $item->pluralkeys;
 			$rootkeys            = $item->rootkeys;
 			$regularkeys         = $item->regularkeys;
@@ -1219,6 +1253,20 @@ class TranslationModel extends AdminModel
 			$targetlang_metadata = LanguageHelper::getMetadata($targetlang);
 			$reflang_rtl         = (int) $reflang_metadata['rtl'];
 			$targetlang_rtl      = (int) $targetlang_metadata['rtl'];
+
+			$stored_deleted_keys = LocaliseHelper::getKnownDeletedKeysList();
+
+			if ($stored_deleted_keys == false)
+			{
+				$stored_deleted_keys = array();
+			}
+
+			$stored_renamed_keys = LocaliseHelper::getKnownRenamedKeysList($client, $reflang);
+
+			if ($stored_renamed_keys == false)
+			{
+				$stored_renamed_keys = array();
+			}
 		}
 
 		if ($this->getState('translation.layout') != 'raw')
@@ -1300,6 +1348,14 @@ class TranslationModel extends AdminModel
 
 			$ref_keys_only  = array();
 			$lang_keys_only = array();
+
+			$stored_renamed_data   = LocaliseHelper::getStoredRenamedKeys($client, $reflang);
+			$stored_renamed_amount = 0;
+
+			if ($stored_renamed_data == false)
+			{
+				$stored_renamed_data = array();
+			}
 
 			if (!empty($refsections['keys']))
 			{
@@ -1452,7 +1508,24 @@ class TranslationModel extends AdminModel
 										// TODO Check if the old translated string is an issued string case to skip the replacement.
 									}
 								}
+							}
+							else if (isset($stored_renamed_data[$key]))
+							{
+								$old_key = $stored_renamed_data[$key]->key;
 
+								// The old translation string, if present at the translation as 'Renamed key' to delete.
+								$old_translation_string = isset($sections['keys'][$old_key]) ? $sections['keys'][$old_key] : '';
+
+								// Check if the en-GB string is equal to the translated string to catch untranslated cases only.
+								if (!empty($old_translation_string) && $translation_string == $string)
+								{
+									// Check if the old string in translation was translated
+									if ($old_translation_string != $string)
+									{
+										$sections['keys'][$key] = $old_translation_string;
+										$stored_renamed_amount++;
+									}
+								}
 							}
 
 							$translated = isset($sections['keys'][$key]);
@@ -1589,9 +1662,44 @@ class TranslationModel extends AdminModel
 
 				$stream->close();
 
+				$combined_renamed_keys = array();
+
+				if (!empty($renamedkeys) && !empty($storedrenamedkeys))
+				{
+					$combined_renamed_keys = array_merge($renamedkeys, $storedrenamedkeys);
+				}
+				else if (!empty($renamedkeys))
+				{
+					$combined_renamed_keys = $renamedkeys;
+				}
+				else if (!empty($storedrenamedkeys))
+				{
+					$combined_renamed_keys = $storedrenamedkeys;
+				}
+
+				$combined_deleted_keys = array();
+
+				if (!empty($deletedkeys) && !empty($storeddeletedkeys))
+				{
+					$combined_deleted_keys = array_merge($deletedkeys, $storeddeletedkeys);
+				}
+				else if (!empty($deletedkeys))
+				{
+					$combined_deleted_keys = $deletedkeys;
+				}
+				else if (!empty($storeddeletedkeys))
+				{
+					$combined_deleted_keys = $storeddeletedkeys;
+				}
+
 				if ($istranslation == 1)
 				{
-					$cases = array('renamed' => $renamedkeys, 'deleted' => $deletedkeys, 'personalised' => $personalisedkeys, 'extra' => $extrakeys);
+					$cases = array(
+						'renamed' => $combined_renamed_keys,
+						'deleted' => $combined_deleted_keys,
+						'personalised' => $personalisedkeys,
+						'extra' => $extrakeys
+					);
 
 					if (!empty($extra_keys_in_translation))
 					{
@@ -1676,6 +1784,38 @@ class TranslationModel extends AdminModel
 											$field->addAttribute('ispersonalised', 0);
 											$field->addAttribute('isduplicated', 0);
 										}
+
+										if ($case == 'deleted')
+										{
+											if (!in_array($extra_key_in_translation, $deletedkeys))
+											{
+												$field->addAttribute('isdeletedstorage', 1);
+											}
+											else
+											{
+												$field->addAttribute('isdeletedstorage', 0);
+											}
+										}
+										else
+										{
+											$field->addAttribute('isdeletedstorage', 0);
+										}
+
+										if ($case == 'renamed')
+										{
+											if (!in_array($extra_key_in_translation, $renamedkeys))
+											{
+												$field->addAttribute('isrenamedstorage', 1);
+											}
+											else
+											{
+												$field->addAttribute('isrenamedstorage', 0);
+											}
+										}
+										else
+										{
+											$field->addAttribute('isrenamedstorage', 0);
+										}
 									}
 								}
 							}
@@ -1750,6 +1890,13 @@ class TranslationModel extends AdminModel
 				Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_TRANSLATION_REPLACED_CASES_AMOUNT',
 					$renamed_in_dev_amount,
 					$replaced_cases_amount),
+					'notice');
+			}
+
+			if ($stored_renamed_amount > 0)
+			{
+				Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_TRANSLATION_STORED_REPLACED_CASES_AMOUNT',
+					$stored_renamed_amount),
 					'notice');
 			}
 		}

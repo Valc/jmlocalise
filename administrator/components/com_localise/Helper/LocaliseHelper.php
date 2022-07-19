@@ -762,15 +762,21 @@ abstract class LocaliseHelper
 	{
 		if (!empty($gh_data))
 		{
-			$params        = ComponentHelper::getParams('com_localise');
-			$ref_tag       = $params->get('reference', 'en-GB');
-			$saved_ref     = $params->get('customisedref', '0');
-			$allow_develop = $params->get('gh_allow_develop', 0);
-			$gh_client     = $gh_data['github_client'];
-			$customisedref = $saved_ref;
-			$last_sources  = self::getLastsourcereference();
-			$last_source   = $last_sources[$gh_client];
-			$versions      = array();
+			$params            = ComponentHelper::getParams('com_localise');
+			$ref_tag           = $params->get('reference', 'en-GB');
+			$saved_ref         = $params->get('customisedref', '0');
+			$allow_develop     = $params->get('gh_allow_develop', 0);
+			$gh_client         = $gh_data['github_client'];
+			$customisedref     = $saved_ref;
+			$last_sources      = self::getLastsourcereference();
+			$last_source       = $last_sources[$gh_client];
+			$versions          = array();
+			$stored_core_files = self::getKnownCoreFilesList();
+
+			if ($stored_core_files == false)
+			{
+				$stored_core_files = array();
+			}
 
 			$versions_path = JPATH_ROOT
 					. '/administrator/components/com_localise/customisedref/stable_joomla_releases.txt';
@@ -1067,6 +1073,29 @@ abstract class LocaliseHelper
 							'warning');
 
 						return false;
+					}
+
+					if ($ext == 'ini' && !in_array($file_to_include, $stored_core_files))
+					{
+						$core_file           = new \JObject;
+						$core_file->id       = null;
+						$core_file->filename = $file_to_include;
+
+						$add_core_file = self::addKnownCoreFile($core_file);
+
+						// For debugging purposes only
+						if ($add_core_file)
+						{
+							//Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_TRANSLATION_ADD_CORE_FILE_SUCCESS',
+							//	htmlspecialchars($file_to_include)),
+							//	'notice');
+						}
+						else
+						{
+							//Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_TRANSLATION_ADD_CORE_FILE_WARNING',
+							//	htmlspecialchars($file_to_include)),
+							//	'warning');
+						}
 					}
 				}
 			}
@@ -1560,6 +1589,12 @@ abstract class LocaliseHelper
 			$last_stored_update = $params->get($client_to_update, '');
 			$ref_tag            = $params->get('reference', 'en-GB');
 			$allow_develop      = $params->get('gh_allow_develop', 0);
+			$stored_core_files  = self::getKnownCoreFilesList();
+
+			if ($stored_core_files == false)
+			{
+				$stored_core_files = array();
+			}
 
 			if ($allow_develop == 0)
 			{
@@ -1748,6 +1783,40 @@ abstract class LocaliseHelper
 
 					return false;
 				}
+
+				$ext = File::getExt($file_to_include);
+
+				if ($ext == "ini" && $file_to_include == 'en-GB.ini')
+				{
+					$file_to_include = str_replace('en-GB.', 'joomla.', $file_to_include);
+				}
+				else if ($ext == "ini")
+				{
+					$file_to_include = str_replace('en-GB.', '', $file_to_include);
+				}
+
+				if ($ext == 'ini' && !in_array($file_to_include, $stored_core_files))
+				{
+					$core_file           = new \JObject;
+					$core_file->id       = null;
+					$core_file->filename = $file_to_include;
+
+					$add_core_file = self::addKnownCoreFile($core_file);
+
+					// For debugging purposes only
+					if ($add_core_file)
+					{
+						//Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_TRANSLATION_ADD_CORE_FILE_SUCCESS',
+						//	htmlspecialchars($file_to_include)),
+						//	'notice');
+					}
+					else
+					{
+						//Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_TRANSLATION_ADD_CORE_FILE_WARNING',
+						//	htmlspecialchars($file_to_include)),
+						//	'warning');
+					}
+				}
 			}
 
 			if (!empty($all_files_list) && !empty($files_to_include))
@@ -1835,8 +1904,10 @@ abstract class LocaliseHelper
 			$developdata['renamed_keys']['strings']      = array();
 			$developdata['renamed_keys']['replacements'] = array();
 
-			$extras_in_develop  = array_diff($keys_in_develop, $keys_in_reference);
-			$deleted_in_develop = array_diff($keys_in_reference, $keys_in_develop);
+			$extras_in_develop   = array_diff($keys_in_develop, $keys_in_reference);
+			$deleted_in_develop  = array_diff($keys_in_reference, $keys_in_develop);
+			$stored_deleted_keys = self::getKnownDeletedKeysList();
+			$stored_renamed_keys = self::getKnownRenamedKeysList($client = $info['client']);
 
 			if (!empty($deleted_in_develop))
 			{
@@ -1851,12 +1922,35 @@ abstract class LocaliseHelper
 						$developdata['renamed_keys']['keys'][]                 = $deleted_key;
 						$developdata['renamed_keys']['strings'][$deleted_key]  = $deleted_string;
 						$developdata['renamed_keys']['replacements'][$renamed_key] = $deleted_key;
+
+						if (!in_array($deleted_key, $stored_renamed_keys))
+						{
+							$key_data                  = new \JObject;
+							$key_data->id              = null;
+							$key_data->client          = $info['client'];
+							$key_data->reflang         = 'en-GB';
+							$key_data->key             = $deleted_key;
+							$key_data->replacement_key = $renamed_key;
+							$key_data->reflang_string  = $deleted_string;
+
+							$add_renamed_key = self::addKnownRenamedKey($key_data);
+						}
 					}
 					else
 					{
 						$developdata['deleted_keys']['amount']++;
 						$developdata['deleted_keys']['keys'][]                = $deleted_key;
 						$developdata['deleted_keys']['strings'][$deleted_key] = $deleted_string;
+
+						if (!in_array($deleted_key, $stored_deleted_keys))
+						{
+							$key_data          = new \JObject;
+							$key_data->id      = null;
+							$key_data->reflang = 'en-GB';
+							$key_data->key     = $deleted_key;
+
+							$add_deleted_key = self::addKnownDeletedKey($key_data);
+						}
 					}
 				}
 			}
@@ -2937,6 +3031,7 @@ abstract class LocaliseHelper
 
 		$html_output .= HTMLHelper::_('uitab.startTabSet', 'myTab', array('active' => $active));
 		$html_output .= HTMLHelper::_('uitab.addTab', 'myTab', 'engb_tab_' . $encoded_value, 'en-GB', true);
+		$html_output .= '<div class="word-break-width-100">';
 
 		if ($is_textchange == 1 || $is_issued == 1)
 		{
@@ -2947,19 +3042,23 @@ abstract class LocaliseHelper
 			$html_output .= $field->label->field_label;
 		}
 
+		$html_output .= '</div>';
 		$html_output .= HTMLHelper::_('uitab.endTab');
 
 		if ($is_textchange == 1)
 		{
 			$html_output .= HTMLHelper::_('uitab.addTab', 'myTab', 'engb_tab_tc_' . $encoded_value, 'Text changes', true);
+			$html_output .= '<div class="word-break-width-100">';
 			$html_output .= $field->label->field_label;
 			$html_output .= $field->label->textchanges_checkbox;
+			$html_output .= '</div>';
 			$html_output .= HTMLHelper::_('uitab.endTab');
 		}
 
 		if ($is_issued == 1)
 		{
 			$html_output .= HTMLHelper::_('uitab.addTab', 'myTab', 'engb_tab_issued_' . $encoded_value, 'Issues', true);
+			$html_output .= '<div class="word-break-width-100">';
 			$html_output .= '<p class ="nomargin">' . $field->label->field_key . '</p>';
 			$html_output .= $field->label->engb_string;
 			$html_output .= '<p class ="nomargin">' . $field->label->targetlang . '</p>';
@@ -2967,6 +3066,7 @@ abstract class LocaliseHelper
 			$html_output .= '<p class ="nomargin">' . Text::_('COM_LOCALISE_DETECTABLE_ISSUES') . '</p>';
 			$html_output .= $field->label->issue_details;
 			$html_output .= $field->label->falsepositive_checkbox;
+			$html_output .= '</div>';
 			$html_output .= HTMLHelper::_('uitab.endTab');
 		}
 
@@ -3652,7 +3752,7 @@ abstract class LocaliseHelper
 					{
 						$personalised_plural = $key_case->root_key . '_' . $plural_suffix;
 
-						// Used for debugging pruposes
+						// Used for debugging purposes
 						$message = "Duplicated plural case detected. The plural:<br>"
 									. $duplicated_plural
 									. "<br>matches with the presonalised plural for:<br>"
@@ -3677,5 +3777,271 @@ abstract class LocaliseHelper
 		}
 
 		return;
+	}
+
+	/**
+	 * Gets the known core files list
+	 *
+	 * @return array
+	 *
+	 */
+	public static function getKnownCoreFilesList()
+	{
+		try
+		{
+			$db    = Factory::getDbo();
+			$query = $db->getQuery(true);
+
+			$query->select(
+				array(
+					$db->quoteName('filename')
+				)
+			);
+
+			$query->from($db->quoteName('#__localise_known_core_files'));
+			$query->order('filename ASC');
+
+			$db->setQuery($query);
+
+			if (! $db->execute())
+			{
+				throw new Exception($db->getErrorMsg());
+			}
+		}
+		catch (JException $e)
+		{
+			return false;
+		}
+
+		$result = $db->loadColumn();
+
+		if (! is_null($result) && ! empty($result))
+		{
+			return $result;
+		}
+		else
+		{
+			return false;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Add to the known core files list a core file
+	 *
+	 * @return bool
+	 *
+	 */
+	public static function addKnownCoreFile($core_file)
+	{
+		if (!is_object($core_file))
+		{
+			return false;
+		}
+
+		$result = Factory::getDbo()->insertObject('#__localise_known_core_files', $core_file, 'id');
+
+		if (! is_null($result) && ! empty($result) && $result)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Gets the known deleted keys list
+	 *
+	 * @return array
+	 *
+	 */
+	public static function getKnownDeletedKeysList($reflang = 'en-GB')
+	{
+		try
+		{
+			$db    = Factory::getDbo();
+			$query = $db->getQuery(true);
+
+			$query->select(
+				array(
+					$db->quoteName('key')
+				)
+			);
+
+			$query->from($db->quoteName('#__localise_known_deleted_keys'));
+			$query->where($db->quoteName('reflang')." = :reflang");
+			$query->bind(':reflang', $reflang);
+			//$query->order('key ASC');
+
+			$db->setQuery($query);
+
+			if (! $db->execute())
+			{
+				throw new Exception($db->getErrorMsg());
+			}
+		}
+		catch (JException $e)
+		{
+			return false;
+		}
+
+		$result = $db->loadColumn();
+
+		if (! is_null($result) && ! empty($result))
+		{
+			return $result;
+		}
+		else
+		{
+			return array();
+		}
+
+		return false;
+	}
+
+	/**
+	 * Add to the known deleted keys list a deleted key
+	 *
+	 * @return bool
+	 *
+	 */
+	public static function addKnownDeletedKey($key_data)
+	{
+		if (!is_object($key_data))
+		{
+			return false;
+		}
+
+		$result = Factory::getDbo()->insertObject('#__localise_known_deleted_keys', $key_data, 'id');
+
+		if (! is_null($result) && ! empty($result) && $result)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Gets the known renamed keys list
+	 *
+	 * @return array
+	 *
+	 */
+	public static function getKnownRenamedKeysList($client, $reflang = 'en-GB')
+	{
+		try
+		{
+			$db    = Factory::getDbo();
+			$query = $db->getQuery(true);
+
+			$query->select(
+				array(
+					$db->quoteName('key')
+				)
+			);
+
+			$query->from($db->quoteName('#__localise_known_renamed_keys'));
+			$query->where($db->quoteName('client')." = :client");
+			$query->where($db->quoteName('reflang')." = :reflang");
+			$query->bind(':client', $client);
+			$query->bind(':reflang', $reflang);
+
+			$db->setQuery($query);
+
+			if (! $db->execute())
+			{
+				throw new Exception($db->getErrorMsg());
+			}
+		}
+		catch (JException $e)
+		{
+			return false;
+		}
+
+		$result = $db->loadColumn();
+
+		if (! is_null($result) && ! empty($result))
+		{
+			return $result;
+		}
+		else
+		{
+			return array();
+		}
+
+		return false;
+	}
+
+	/**
+	 * Add to the known renamed keys list a renamed key
+	 *
+	 * @return bool
+	 *
+	 */
+	public static function addKnownRenamedKey($key_data)
+	{
+		if (!is_object($key_data))
+		{
+			return false;
+		}
+
+		$result = Factory::getDbo()->insertObject('#__localise_known_renamed_keys', $key_data, 'id');
+
+		if (! is_null($result) && ! empty($result) && $result)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Gets the known renamed keys by associated replacement key
+	 *
+	 * @return Object
+	 *
+	 */
+	public static function getStoredRenamedKeys($client, $reflang = 'en-GB')
+	{
+		$db    = Factory::getDbo();
+		$query = $db->getQuery(true);
+
+		$query->select(
+				array(
+					$db->quoteName('id'),
+					$db->quoteName('client'),
+					$db->quoteName('reflang'),
+					$db->quoteName('key'),
+					$db->quoteName('replacement_key'),
+					$db->quoteName('reflang_string')
+				)
+		);
+
+		$query->from($db->quoteName('#__localise_known_renamed_keys'));
+		$query->where($db->quoteName('client')." = :client");
+		$query->where($db->quoteName('reflang')." = :reflang");
+		$query->bind(':client', $client);
+		$query->bind(':reflang', $reflang);
+
+		$db->setQuery($query);
+
+		$result = $db->loadObjectList('replacement_key');
+
+		if (! is_null($result) && ! empty($result) && $result)
+		{
+			return $result;
+		}
+		else
+		{
+			return false;
+		}
 	}
 }

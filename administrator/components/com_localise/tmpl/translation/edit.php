@@ -80,8 +80,8 @@ $has_issuedkeys       = 0;
 
 if ($istranslation == 1 && $ref_tag == 'en-GB')
 {
-	$has_deletedkeys      = !empty($this->item->deletedkeys) ? 1 : 0;
-	$has_renamedkeys      = !empty($this->item->renamedkeys) ? 1 : 0;
+	$has_deletedkeys      = (!empty($this->item->deletedkeys) || !empty($this->item->storeddeletedkeys)) ? 1 : 0;
+	$has_renamedkeys      = (!empty($this->item->renamedkeys) || !empty($this->item->storedrenamedkeys)) ? 1 : 0;
 	$has_pluralkeys       = !empty($this->item->pluralkeys) ? 1 : 0;
 	$has_issuedkeys       = !empty($this->item->issuedkeys) ? 1 : 0;
 	$has_unchecked        = ($this->item->unchecked > 0) ? 1 : 0;
@@ -99,8 +99,49 @@ if (isset($posted['select']['keystatus'])
 	&& $posted['select']['keystatus'] != 'allkeys'
 	)
 {
-	$filter       = $posted['select']['keystatus'];
-	$keystofilter = array ($this->item->$filter);
+	$filter = $posted['select']['keystatus'];
+
+	if ($filter == 'deletedkeys')
+	{
+		$deleted       = array ($this->item->deletedkeys);
+		$storeddeleted = array ($this->item->storeddeletedkeys);
+
+		if (!empty($deleted) && !empty($storeddeleted))
+		{
+			$keystofilter = array_merge($deleted, $storeddeleted);
+		}
+		else if (!empty($deleted))
+		{
+			$keystofilter = $deleted;
+		}
+		else if (!empty($storeddeleted))
+		{
+			$keystofilter = $storeddeleted;
+		}
+	}
+	else if ($filter == 'renamedkeys')
+	{
+		$renamed       = array ($this->item->renamedkeys);
+		$storedrenamed = array ($this->item->storedrenamedkeys);
+
+		if (!empty($renamed) && !empty($storedrenamed))
+		{
+			$keystofilter = array_merge($renamed, $storedrenamed);
+		}
+		else if (!empty($renamed))
+		{
+			$keystofilter = $renamed;
+		}
+		else if (!empty($storedrenamed))
+		{
+			$keystofilter = $storedrenamed;
+		}
+	}
+	else
+	{
+		$keystofilter = array ($this->item->$filter);
+	}
+
 	$tabstate   = 'strings';
 
 	$app->setUserState ('com_localise.translation.edit.tabstate', 'strings');

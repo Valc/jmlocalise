@@ -87,7 +87,7 @@ class TranslationsModel extends ListModel
 	 */
 	protected function populateState($ordering = null, $direction = null)
 	{
-		$app  = Factory::getApplication();
+		$app = Factory::getApplication();
 
 		$this->setState('filter.search', $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string'));
 		$this->setState('filter.client', $this->getUserStateFromRequest($this->context . '.client', 'client', '', 'string'));
@@ -98,7 +98,7 @@ class TranslationsModel extends ListModel
 		$this->setState('filter.type', $this->getUserStateFromRequest($this->context . '.type', 'type', '', 'string'));
 		$this->setState('filter.develop', $this->getUserStateFromRequest($this->context . '.develop', 'develop', '', 'string'));
 
-		$params    = ComponentHelper::getParams('com_localise');
+		$params = ComponentHelper::getParams('com_localise');
 
 		$this->setState('params', $params);
 

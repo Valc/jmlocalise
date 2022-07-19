@@ -149,21 +149,21 @@ $max_vars = ini_get('max_input_vars');
 				<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_REFERENCE'), 'inactive_class'=>'16-reference', 'enabled' => false, 'translate'=>false)); ?>
 			<?php elseif ($item->complete) : ?>
 				<?php if ($news_amount > 0 || $text_changes_amount > 0) : ?>
-					<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_COMPLETE_WITH_DEVELOP', $item->translated, $item->unchanged, $news_amount, $text_changes_amount, $item->total, $item->renamed, $item->deleted, $item->extra, $issues_amount), 'inactive_class'=>'16-complete', 'enabled' => false, 'translate'=>false)); ?>
+					<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_COMPLETE_WITH_DEVELOP', $item->translated, $item->unchanged, $news_amount, $text_changes_amount, $item->total, ($item->renamed + $item->storedrenamed), ($item->deleted + $item->storeddeleted), $item->extra, $issues_amount), 'inactive_class'=>'16-complete', 'enabled' => false, 'translate'=>false)); ?>
 				<?php else : ?>
 					<?php $is_emptyFile = empty(file_get_contents($item->refpath)); ?>
 					<?php if ($is_emptyFile) : ?>
 						<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_ERROR_REFERENCE_FILE_EMPTY', substr($item->refpath, strlen(JPATH_ROOT)), substr($item->path, strlen(JPATH_ROOT))), 'inactive_class'=>'16-error', 'enabled' => false, 'translate'=>false)); ?>
 					<?php else : ?>
-						<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_COMPLETE', $item->translated, $item->unchanged, $item->total, $item->extra, $issues_amount), 'inactive_class'=>'16-complete', 'enabled' => false, 'translate'=>false)); ?>
+						<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=>Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_COMPLETE', $item->translated, $item->unchanged, $item->total, ($item->renamed + $item->storedrenamed), ($item->deleted + $item->storeddeleted), $item->extra, $issues_amount), 'inactive_class'=>'16-complete', 'enabled' => false, 'translate'=>false)); ?>
 					<?php endif; ?>
 				<?php endif; ?>
 			<?php else : ?>
 				<?php if ($news_amount > 0 || $text_changes_amount > 0) : ?>
-					<?php $tip = $item->translated + $item->unchanged == 0 ? Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_NOTSTARTED') : Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_INPROGRESS_WITH_DEVELOP', $item->translated, $item->unchanged, $news_amount, $text_changes_amount, $item->total, $item->renamed, $item->deleted, $item->extra, $issues_amount); ?>
+					<?php $tip = $item->translated + $item->unchanged == 0 ? Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_NOTSTARTED') : Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_INPROGRESS_WITH_DEVELOP', $item->translated, $item->unchanged, $news_amount, $text_changes_amount, $item->total, ($item->renamed + $item->storedrenamed), ($item->deleted + $item->storeddeleted), $item->extra, $issues_amount); ?>
 					<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=> $tip, 'inactive_class' => '16-info', 'enabled' => false, 'translate' => false)); ?>
 				<?php else : ?>
-					<?php $tip = $item->translated + $item->unchanged == 0 ? Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_NOTSTARTED') : Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_INPROGRESS', $item->translated, $item->unchanged, $item->total, $item->extra, $issues_amount); ?>
+					<?php $tip = $item->translated + $item->unchanged == 0 ? Text::_('COM_LOCALISE_TOOLTIP_TRANSLATIONS_NOTSTARTED') : Text::sprintf('COM_LOCALISE_TOOLTIP_TRANSLATIONS_INPROGRESS', $item->translated, $item->unchanged, $item->total, ($item->renamed + $item->storedrenamed), ($item->deleted + $item->storeddeleted), $item->extra, $issues_amount); ?>
 					<?php echo HTMLHelper::_('jgrid.action', $i, '', array('tip'=>true, 'inactive_title'=> $tip, 'inactive_class' => '16-info', 'enabled' => false, 'translate' => false)); ?>
 				<?php endif; ?>
 				<?php $unrevised = $item->total ? intval(100 * $item->unrevised / $item->total) : 0; ?>

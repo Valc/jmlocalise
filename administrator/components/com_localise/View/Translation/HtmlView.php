@@ -81,8 +81,8 @@ class HtmlView extends BaseHtmlView
 		$checkedOut    = !($this->item->checked_out == 0 || $this->item->checked_out == $user->get('id'));
 		$complete      = (int) ComponentHelper::getParams('com_localise')->get('complete', 0);
 		$istranslation = $this->item->istranslation;
-		$has_renamed   = $this->item->renamed > 0 ? true : false;
-		$has_deleted   = $this->item->deleted > 0 ? true : false;
+		$has_renamed   = ($this->item->renamed > 0 || $this->item->storedrenamed > 0) ? true : false;
+		$has_deleted   = ($this->item->deleted > 0  || $this->item->storeddeleted > 0)? true : false;
 		$has_notinref  = $this->item->extra > 0 ? true : false;
 		$has_unchecked = $this->item->unchecked > 0 ? true : false;
 

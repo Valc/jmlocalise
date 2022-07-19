@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `#__localise_known_renamed_keys` (
   `reflang` varchar(6) NOT NULL,
   `key` varchar(100) NOT NULL,
   `replacement_key` varchar(100) NOT NULL,
-  `reflang_string` mediumtext NOT NULL,
+  `reflang_string` longtext NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
 
