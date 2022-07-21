@@ -56,6 +56,7 @@ class KeyField extends FormField
 		$field_data->is_textchange          = (int) $this->element['istextchange'];
 		$field_data->is_issued              = (int) $this->element['isissued'];
 		$field_data->targetlang             = (string) $this->element['targetlang'];
+		$field_data->reflang                = (string) $this->element['reflang'];
 		$field_data->engb_string            = (string) $this->element['engb_string'];
 		$field_data->ttms_string            = (string) $this->element['ttms_string'];
 		$field_data->issue_details          = (string) $this->element['issue_details'];
@@ -219,21 +220,21 @@ class KeyField extends FormField
 			{
 				$title = Text::_('COM_LOCALISE_REVISED');
 				$tip   = $title;
-
-				$label_desc  = '';
-				$label_desc .= '<div><strong>';
-				$label_desc .= $this->element['name'];
-				$label_desc .= '</strong><br><label class="key-label normal-text ' . $direction . '">';
-				$label_desc .= htmlspecialchars($this->element['sourcetext'], ENT_COMPAT, 'UTF-8');
-				$label_desc .= '</label></div>';
-
-				$field_data->field_desc = $label_desc;
 			}
 			else
 			{
 				$title = Text::_('COM_LOCALISE_CHECKBOX_TRANSLATION_GRAMMAR_CASE');
 				$tip   = '';
+
 			}
+
+			$label_desc  = '';
+			$label_desc .= '<div><strong>';
+			$label_desc .= $this->element['name'];
+			$label_desc .= '</strong><br><label class="key-label normal-text ' . $direction . '">';
+			$label_desc .= htmlspecialchars($this->element['targettext'], ENT_COMPAT, 'UTF-8');
+			$label_desc .= '</label></div>';
+			$field_data->field_desc = $label_desc;
 
 			$textchanges_checkbox  = '';
 			$textchanges_checkbox .= '<div><strong>' . $title . '</strong><input style="" id="';
@@ -513,6 +514,31 @@ class KeyField extends FormField
 
 			return $field_data;
 		}
+		else if ($status == 'extrafile')
+		{
+			// Set the class for the label when it is an extra key in the en-GB language.
+			$class = !empty($this->descText) ? "key-label hasTooltip $direction" : "key-label $direction";
+
+			$field_data->reflang = $targetlang;
+
+			// If a description is specified, use it to build a tooltip.
+			if (!empty($this->descText))
+			{
+				$label = '<label id="' . $this->id . '-lbl" for="' . $this->id . '" class="' . $class . '" title="'
+						. htmlspecialchars(htmlspecialchars('::' . str_replace("\n", "\\n", $this->descText), ENT_QUOTES, 'UTF-8')) . '">';
+			}
+			else
+			{
+				$label = '<label id="' . $this->id . '-lbl" for="' . $this->id . '" class="' . $class . '">';
+			}
+
+			$label .= $this->element['label'];
+			$label .= '</label>';
+
+			$field_data->field_label = $label;
+
+			return $field_data;
+		}
 		else
 		{
 			// Set the class for the label for any other case.
@@ -603,23 +629,31 @@ class KeyField extends FormField
 			if ($status == 'extra' || $status == 'deleted' || $status == 'renamed' || $status == 'personalised')
 			{
 				$class .= " width-100 $status";
-				$input  = '';
-
-				$notinref_key         = (string) $this->element['label'];
-				$notinref_checkbox_id = "notinref_checkbox_id_" . str_replace(array("_", ":"), "", $this->element['name']);
-
-				$notinref_onclick = "javascript:";
-				$notinref_onclick = "var checked_values = document.getElementsByName('jform[notinref]');
-									var form           = $('#localise-translation-form');
-
-									// Set to the hidden form field 'notinref' the value of the selected checkboxes.
-									form.find('input[name=notinref]').val(checked_values);
-									";
 
 				$button  = '';
 				$button .= '<i class="icon-16-notinreference hasTooltip pointer" title="';
 				$button .= Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_EXTRA_KEYS_IN_TRANSLATION_ICON');
 				$button .= '" onclick="' . $onclick . '"></i><br>';
+
+				$button2 = '';
+
+				$input  = '';
+				$input .= '<textarea name="' . $textarea_name . '" id="' . $textarea_id . '"';
+				$input .= ' class="' . $class . '">';
+				$input .= htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8') . '</textarea>';
+
+				$field_data->field_input     = $input;
+				$field_data->field_button    = $button;
+				$field_data->field_button2   = $button2;
+				$field_data->field_commented = $commented;
+
+				return $field_data;
+			}
+			else if ($status == 'extrafile')
+			{
+				$class .= " width-100 extra";
+
+				$button  = '';
 
 				$button2 = '';
 

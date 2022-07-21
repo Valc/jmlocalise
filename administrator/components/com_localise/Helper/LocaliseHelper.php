@@ -3030,7 +3030,7 @@ abstract class LocaliseHelper
 		}
 
 		$html_output .= HTMLHelper::_('uitab.startTabSet', 'myTab', array('active' => $active));
-		$html_output .= HTMLHelper::_('uitab.addTab', 'myTab', 'engb_tab_' . $encoded_value, 'en-GB', true);
+		$html_output .= HTMLHelper::_('uitab.addTab', 'myTab', 'engb_tab_' . $encoded_value, $field->label->reflang, true);
 		$html_output .= '<div class="word-break-width-100">';
 
 		if ($is_textchange == 1 || $is_issued == 1)

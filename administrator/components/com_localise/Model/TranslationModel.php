@@ -190,6 +190,7 @@ class TranslationModel extends AdminModel
 				$reftag        = $this->getState('translation.reference');
 				$refpath       = $this->getState('translation.refpath');
 				$istranslation = 0;
+				$filestate     = '';
 
 				$stored_deleted_keys = array();
 				$stored_renamed_keys = array();
@@ -199,6 +200,19 @@ class TranslationModel extends AdminModel
 					$istranslation = 1;
 				}
 
+				if ($istranslation == 1)
+				{
+					if (File::exists($this->getState('translation.refpath')) && File::exists($this->getState('translation.path')))
+					{
+						$filestate = 'inlanguage';
+					}
+					else if (File::exists($this->getState('translation.path')))
+					{
+						$filestate = 'notinref';
+					}
+				}
+
+				$this->setState('translation.filestate', $filestate);
 				$this->setState('translation.translatedkeys', array());
 				$this->setState('translation.untranslatedkeys', array());
 				$this->setState('translation.unchangedkeys', array());
@@ -251,6 +265,7 @@ class TranslationModel extends AdminModel
 										'additionalcopyright' => array(),
 										'license'             => '',
 										'exists'              => File::exists($this->getState('translation.path')),
+										'filestate'           => $filestate,
 										'reflang'             => $reftag,
 										'targetlang'          => $tag,
 										'istranslation'       => $istranslation,
@@ -944,7 +959,7 @@ class TranslationModel extends AdminModel
 					// "Personalised" due are plural cases than the language to translate needs to use.
 					// "Extra" since it could not be detected that it is a deleted en-GB key
 					// or it is a 'real' extra key than never has been present at en-GB.
-					if (!empty($sections['keys']) && $istranslation == 1)
+					if (!empty($sections['keys']) && $istranslation == 1 && $reftag == 'en-GB')
 					{
 						// Getting the plural suffixes for the selected language to translate.
 						$plural_suffixes   = $suffixes_data->plural_suffixes;
@@ -994,6 +1009,17 @@ class TranslationModel extends AdminModel
 							}
 						}
 					}
+					else if (!empty($sections['keys']) && $istranslation == 1 && $reftag == 'en-GB')
+					{
+						foreach ($sections['keys'] as $key => $string)
+						{
+							if (empty($refsections['keys']) || !array_key_exists($key, $refsections['keys']))
+							{
+								$extrakeys[] = $key;
+								$this->item->extra++;
+							}
+						}
+					}
 
 					$this->item->developdata       = $developdata;
 					$this->item->extrakeys         = $extrakeys;
@@ -1014,7 +1040,7 @@ class TranslationModel extends AdminModel
 					$this->setState('translation.deletedkeys', $deletedkeys);
 					$this->setState('translation.renamedkeys', $renamedkeys);
 					$this->setState('translation.storeddeletedkeys', $storeddeletedkeys);
-					$this->setState('translation.rstoredenamedkeys', $storedrenamedkeys);
+					$this->setState('translation.storedenamedkeys', $storedrenamedkeys);
 					$this->setState('translation.pluralkeys', $pluralkeys);
 					$this->setState('translation.rootkeys', $rootkeys);
 					$this->setState('translation.regularkeys', $regularkeys);
@@ -1878,6 +1904,66 @@ class TranslationModel extends AdminModel
 								$field->addAttribute('type', 'key');
 								$field->addAttribute('filter', 'raw');
 							}
+						}
+					}
+				}
+			}
+			else
+			{
+				// Extra file case.
+				$newstrings = true;
+
+				if (!empty($sections['keys']))
+				{
+					foreach ($sections['keys'] as $key => $string)
+					{
+						if (!isset($refsections['keys'][$key]))
+						{
+							if (!$newstrings)
+							{
+								$newstrings = true;
+								$form->load($addform, false);
+								$section = 'COM_LOCALISE_TEXT_TRANSLATION_EXTRAFILE';
+								$addform = new \SimpleXMLElement('<form />');
+								$group   = $addform->addChild('fields');
+								$group->addAttribute('name', 'strings');
+								$fieldset = $group->addChild('fieldset');
+								$fieldset->addAttribute('name', $section);
+								$fieldset->addAttribute('label', $section);
+							}
+
+							$field   = $fieldset->addChild('field');
+							$status  = 'extrafile';
+							$default = $string;
+
+							$label = '<p class="key-case"><strong>'
+								. $key
+								. '</strong></p>';
+							$label = '<div class="word-break-width-100">'
+								. $label
+								. '</div>';
+
+							$field->addAttribute('status', $status);
+							$field->addAttribute('description', $string);
+							$field->addAttribute('istranslation', $istranslation);
+
+							if ($default)
+							{
+								$field->addAttribute('default', $default);
+							}
+							else
+							{
+								$field->addAttribute('default', $string);
+							}
+
+							$field->addAttribute('label', $label);
+							$field->addAttribute('name', $key);
+							$field->addAttribute('reflang', $reflang);
+							$field->addAttribute('targetlang', $targetlang);
+							$field->addAttribute('reflang_is_rtl', $reflang_rtl);
+							$field->addAttribute('targetlang_is_rtl', $targetlang_rtl);
+							$field->addAttribute('type', 'key');
+							$field->addAttribute('filter', 'raw');
 						}
 					}
 				}

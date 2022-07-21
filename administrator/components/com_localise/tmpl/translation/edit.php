@@ -42,6 +42,7 @@ $allow_develop     = $params->get('gh_allow_develop', 0);
 $saved_ref         = $params->get('customisedref', 0);
 $source_ref        = $saved_ref;
 $istranslation     = $this->item->istranslation;
+$filestate         = $this->item->filestate;
 $installed_version = new Version;
 $installed_version = $installed_version->getShortVersion();
 
@@ -163,7 +164,7 @@ $fieldSets = $this->form->getFieldsets();
 $sections  = $this->form->getFieldsets('strings');
 $ftpSets   = $this->formftp->getFieldsets();
 
-if ($istranslation)
+if ($istranslation && $filestate == 'inlanguage')
 {
 	Factory::getDocument()->addScriptDeclaration("
 		function returnAll()
@@ -310,7 +311,7 @@ Factory::getDocument()->addScriptDeclaration("
 						<?php echo HTMLHelper::_('bootstrap.endAccordion'); ?>
 						<div class="key">
 							<div id="translationbar">
-								<?php if ($istranslation) : ?>
+								<?php if ($istranslation && $filestate == 'inlanguage') : ?>
 									<div class="pull-left">
 										<?php foreach($this->form->getFieldset('select') as $field): ?>
 											<?php if ($field->type != "Spacer") : ?>
@@ -325,9 +326,11 @@ Factory::getDocument()->addScriptDeclaration("
 										<?php endforeach; ?>
 									</div>
 								<?php endif; ?>
+								<?php if ($filestate != 'notinref') : ?>
 								<a href="javascript:void(0);" class="btn btn-small" onclick="returnAll();">
 									<i class="icon-reset"></i> <?php echo Text::_('COM_LOCALISE_BUTTON_RESET_ALL');?>
 								</a>
+								<?php endif; ?>
 							</div>
 							<?php
 								if (count($sections) > 1 && $filter == 'allkeys') :
@@ -400,6 +403,13 @@ Factory::getDocument()->addScriptDeclaration("
 									endforeach;
 									?>
 								<?php else : ?>
+									<?php if ($istranslation && $filestate == 'notinref') : ?>
+										<div class="alert alert-info">
+											<span class="fas fa-info-circle info-line" aria-hidden="true"></span><span class="sr-only">
+											<?php echo Text::_('INFO'); ?></span>
+											<?php echo Text::_('COM_LOCALISE_TOOLTIP_TRANSLATION_FILESTATE_NOTINREF'); ?>
+										</div>
+									<?php endif; ?>
 									<div class="table-responsive"><table class="table table-hover"><tbody>
 										<?php $sections = array_keys($sections); ?>
 										<?php foreach ($this->form->getFieldset($sections[0]) as $field) :
