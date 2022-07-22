@@ -3531,23 +3531,27 @@ abstract class LocaliseHelper
 	 *
 	 * @return object
 	 */
-	public static function isEngbPlural($key, &$ref_keys_only)
+	public static function isEngbPlural($key, &$ref_keys_only, &$orphankeys)
 	{
 		// The en-GB has a knowen plural cases amount.
 		// To handle them is required take in mind than is allowed use multiple suffixes to reply to the same plural case.
 		// Those are 'Regular plural cases' due are also present as 'common keys' to translate.
 		// Also seems the Joomla Project is allowing a sort of 'fake plurals'
 		// due they does not reply with a validated suffix when called by en-GB localise.php file using the 'getPluralSuffixes($n)'function.
+		// The "orphan keys" is only used under "debug mode" for testing purposes.
 
 		if (empty($key))
 		{
 			return false;
 		}
 
+		// Key plural format parts
+		$format_parts = array('_N_ITEMS', '_N_');
+
 		// The en-GB plural suffixes cases.
 		$plural_suffixes = array('0', '1', 'ONE', 'MORE', 'OTHER');
 
-		$key_case =  new \JObject;
+		$key_case = new \JObject;
 
 		// Converting the key to array
 		$root_key = explode('_', $key);
@@ -3565,11 +3569,27 @@ abstract class LocaliseHelper
 		$root_key = rtrim($root_key, '_');
 
 		$key_case->is_plural = false;
+		$key_case->is_orphan = false;
 
 		if (in_array($last_item, $plural_suffixes) && in_array($root_key, $ref_keys_only))
 		{
 			// At this point this one seems is true and we set it as true.
 			$key_case->is_plural = true;
+		}
+		else if (in_array($last_item, $plural_suffixes))
+		{
+			foreach ($format_parts as $plural_format)
+			{
+				$pregkey = preg_quote($plural_format, ':');
+
+				if (preg_match("/$pregkey/", $root_key))
+				{
+					// Comment "$key_case->is_plural = true" to dump "Orphan cases" as system message.
+					$key_case->is_plural = true;
+					$key_case->is_orphan = true;
+					break;
+				}
+			}
 		}
 
 		$key_case->plural_suffixes = $plural_suffixes;

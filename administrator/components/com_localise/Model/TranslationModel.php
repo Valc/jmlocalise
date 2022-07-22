@@ -734,6 +734,7 @@ class TranslationModel extends AdminModel
 					if (!empty($refsections['keys']))
 					{
 						$ref_keys_only = array_keys($refsections['keys']);
+						$orphankeys    = array();
 
 						foreach ($refsections['keys'] as $key => $string)
 						{
@@ -741,7 +742,7 @@ class TranslationModel extends AdminModel
 
 							if ($reftag == 'en-GB' && $istranslation == 1)
 							{
-								$key_case = LocaliseHelper::isEngbPlural($key, $ref_keys_only);
+								$key_case = LocaliseHelper::isEngbPlural($key, $ref_keys_only, $orphankeys);
 
 								if (isset($key_case->is_plural) && $key_case->is_plural == true)
 								{
@@ -762,6 +763,13 @@ class TranslationModel extends AdminModel
 									{
 										$regularkeys[] = $key;
 									}
+								}
+								else if (isset($key_case->is_orphan) && $key_case->is_orphan == true)
+								{
+										$message = "[$client][$ref_file]Orphan plural case detected for the key: " . $key;
+												Factory::getApplication()->enqueueMessage(
+													Text::_($message),
+													'warning');
 								}
 							}
 
