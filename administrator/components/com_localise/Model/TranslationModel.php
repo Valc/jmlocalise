@@ -1017,7 +1017,18 @@ class TranslationModel extends AdminModel
 							}
 						}
 					}
-					else if (!empty($sections['keys']) && $istranslation == 1 && $reftag == 'en-GB')
+					else if (!empty($sections['keys']) && $istranslation == 1 && $reftag != 'en-GB')
+					{
+						foreach ($sections['keys'] as $key => $string)
+						{
+							if (empty($refsections['keys']) || !array_key_exists($key, $refsections['keys']))
+							{
+								$extrakeys[] = $key;
+								$this->item->extra++;
+							}
+						}
+					}
+					else if (!empty($sections['keys']) && $istranslation == 0)
 					{
 						foreach ($sections['keys'] as $key => $string)
 						{
