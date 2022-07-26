@@ -148,14 +148,11 @@ class TranslationsField extends GroupedlistField
 
 						if ($client == 'Site')
 						{
-							$noncorefiles[$client] = array_diff($files, $coresitefiles);
-							$noncorefiles[$client] = array_diff($files, $known_corefiles);
-
+							$noncorefiles[$client] = array_diff($files, $coresitefiles, $known_corefiles);
 						}
 						elseif ($client == 'Administrator')
 						{
-							$noncorefiles[$client] = array_diff($files, $coreadminfiles);
-							$noncorefiles[$client] = array_diff($files, $known_corefiles);
+							$noncorefiles[$client] = array_diff($files, $coreadminfiles, $known_corefiles);
 						}
 
 						foreach ($files as $file)
