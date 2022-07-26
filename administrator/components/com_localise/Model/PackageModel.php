@@ -174,7 +174,8 @@ class PackageModel extends AdminModel
 		$jformdata = $input->get('jform', array(), 'array');
 
 		$id = $this->getState('package.id');
-		$id = is_array($id) ? (count($id) > 0 ? $id[0] : 0) : $id;
+		$id = is_array($id) ? (count($id) > 0 ? @array_pop(array_reverse($id)) : 0) : $id;
+
 		$package = new \JObject;
 		$package->checked_out = 0;
 		$package->standalone  = true;
@@ -847,7 +848,7 @@ class PackageModel extends AdminModel
 				}
 				elseif ($translation != 'joomla')
 				{
-					$msg .= Text::sprintf('COM_LOCALISE_FILE_NOT_TRANSLATED', $data['language'] . '.' . $translation . '.ini', Text::_('JSITE'));
+					$msg .= Text::sprintf('COM_LOCALISE_FILE_NOT_TRANSLATED', $translation . '.ini', Text::_('JSITE'));
 				}
 			}
 

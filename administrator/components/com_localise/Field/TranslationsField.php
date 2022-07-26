@@ -74,6 +74,13 @@ class TranslationsField extends GroupedlistField
 
 		$istranslation  = $reftag != $langtag;
 
+		$known_corefiles = LocaliseHelper::getKnownCoreFilesList();
+
+		if (!is_array($known_corefiles))
+		{
+			$known_corefiles = array();
+		}
+
 		$coreadminfiles = array();
 		$coresitefiles  = array();
 		$noncorefiles   = array();
@@ -142,10 +149,13 @@ class TranslationsField extends GroupedlistField
 						if ($client == 'Site')
 						{
 							$noncorefiles[$client] = array_diff($files, $coresitefiles);
+							$noncorefiles[$client] = array_diff($files, $known_corefiles);
+
 						}
 						elseif ($client == 'Administrator')
 						{
 							$noncorefiles[$client] = array_diff($files, $coreadminfiles);
+							$noncorefiles[$client] = array_diff($files, $known_corefiles);
 						}
 
 						foreach ($files as $file)
