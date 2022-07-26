@@ -2510,7 +2510,7 @@ class TranslationModel extends AdminModel
 						$issues_data->is_false_positive = '0';
 					}
 
-					$issues_data->key    = $key;
+					$issues_data->key               = $key;
 					$issues_data->targetlang_string = base64_encode($data['strings'][$key]);
 
 					$update = LocaliseHelper::updateFalsePositive($issues_data);

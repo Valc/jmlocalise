@@ -382,7 +382,7 @@ class KeyField extends FormField
 				. strtoupper($status))
 				. '</span>';
 
-			$field_data->reflang = $targetlang;
+			$field_data->reflang        = $targetlang;
 			$field_data->field_label    = $label;
 			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
 
@@ -438,7 +438,7 @@ class KeyField extends FormField
 					. '</span>';
 			}
 
-			$field_data->reflang = $targetlang;
+			$field_data->reflang        = $targetlang;
 			$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($status)) . '</span>';
 			$field_data->field_label    = $label;
 			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
@@ -489,7 +489,7 @@ class KeyField extends FormField
 				$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_DUPLICATED_AT_TAB') . '</span>';
 			}
 
-			$field_data->reflang = $targetlang;
+			$field_data->reflang        = $targetlang;
 			$field_data->field_label    = $label;
 			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
 
@@ -950,5 +950,4 @@ class KeyField extends FormField
 			return false;
 		}
 	}
-
 }

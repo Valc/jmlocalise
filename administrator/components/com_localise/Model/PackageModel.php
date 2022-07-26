@@ -27,6 +27,7 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Table\Table;
 use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
 
+include_once JPATH_ADMINISTRATOR . '/components/com_localise/Helper/defines.php';
 /**
  * Package Model class for the Localise component
  *
@@ -867,6 +868,18 @@ class PackageModel extends AdminModel
 
 			$site_package_files[] = array('name' => 'localise.php','data' => $language_data);
 
+			$path = JPATH_ROOT . '/language/' . $data['language'] . '/com_finder.commonwords.txt';
+
+			if (File::exists($path))
+			{
+				$language_data = file_get_contents($path);
+
+				if (!empty($language_data))
+				{
+					$site_package_files[] = array('name' => 'com_finder.commonwords.txt','data' => $language_data);
+				}
+			}
+
 			if ($msg)
 			{
 				$msg .= '<p>...</p>';
@@ -1296,12 +1309,18 @@ class PackageModel extends AdminModel
 
 			return false;
 		}
+		else if ($tag == 'en-GB')
+		{
+			$app->enqueueMessage(Text::_('COM_LOCALISE_FILE_ENGB_TAG_ERROR'), 'error');
+
+			return false;
+		}
 
 		$fileName = File::makeSafe($file['name']);
 		$ext      = File::getExt($fileName);
 
 		// Prevent uploading some file types
-		if (!($ext == "ini" || $fileName == $tag . '.css' || $fileName == 'localise.php'))
+		if (!($ext == "ini" || $fileName == $tag . '.css' || $fileName == 'localise.php' || $fileName == 'com_finder.commonwords.txt'))
 		{
 			$app->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_TYPE_ERROR', $fileName), 'error');
 
@@ -1311,6 +1330,12 @@ class PackageModel extends AdminModel
 		if ($fileName == $tag . '.css' && $location == LOCALISEPATH_SITE)
 		{
 			$app->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_CSS_ERROR', $fileName), 'error');
+
+			return false;
+		}
+		else if ($fileName == 'com_finder.commonwords.txt' && $location == LOCALISEPATH_ADMINISTRATOR)
+		{
+			$app->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_COMMONWORDS_ERROR', $fileName), 'error');
 
 			return false;
 		}

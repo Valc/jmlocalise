@@ -3527,7 +3527,7 @@ abstract class LocaliseHelper
 	 * Determine if the key is a plural case comming from the en-GB language.
 	 *
 	 * @param   string  $key             The key to be validated.
-	 * @param   array   $$ref_keys_only  The en-GB keys present within the file.
+	 * @param   array   $ref_keys_only   The en-GB keys present within the file.
 	 *
 	 * @return object
 	 */
@@ -3537,7 +3537,7 @@ abstract class LocaliseHelper
 		// To handle them is required take in mind than is allowed use multiple suffixes to reply to the same plural case.
 		// Those are 'Regular plural cases' due are also present as 'common keys' to translate.
 		// Also seems the Joomla Project is allowing a sort of 'fake plurals'
-		// due they does not reply with a validated suffix when called by en-GB localise.php file using the 'getPluralSuffixes($n)'function.
+		// due they does not reply with a validated suffix when called by (xx-XX) localise.php file using the 'getPluralSuffixes($n)'function.
 		// The "orphan keys" is only used under "debug mode" for testing purposes.
 
 		if (empty($key))
