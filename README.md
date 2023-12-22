@@ -1,2 +1,2 @@
 # jmlocalise
-developing a version of com_localise adapted to Joomla 4
+developing a version of com_localise adapted to Joomla 5
