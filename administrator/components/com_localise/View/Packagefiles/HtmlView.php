@@ -17,6 +17,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 
 /**
  * Packages View class for the Localise component
@@ -63,7 +64,7 @@ class HtmlView extends BaseHtmlView
 
 		// Set the toolbar
 		$this->addToolbar();
-		$this->sidebar = \JHtmlSidebar::render();
+		$this->sidebar = HTMLHelper::_('sidebar.render');
 
 		// Prepare the document
 		$this->prepareDocument();

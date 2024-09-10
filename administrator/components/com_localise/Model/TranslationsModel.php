@@ -23,6 +23,7 @@ use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
 use Joomla\Component\Localise\Administrator\Model\LanguagesModel;
 use Joomla\Component\Localise\Administrator\Model\TranslationModel;
 use Joomla\Utilities\ArrayHelper;
+use Joomla\CMS\Object\CMSObject;
 
 /**
  * Translations Model class for the Localise component
@@ -198,7 +199,7 @@ class TranslationsModel extends ListModel
 
 							if (File::exists($file) && preg_match("/$filter_origin/", $origin))
 							{
-								$translation = new \JObject(
+								$translation = new CMSObject(
 									array(
 										'type' => $type,
 										'tag' => $tag,
@@ -278,7 +279,7 @@ class TranslationsModel extends ListModel
 								{
 									$prefix = substr($file, 0, 3);
 
-									$translation = new \JObject(
+									$translation = new CMSObject(
 										array(
 											'tag' => $tag,
 											'client' => $client,
@@ -404,7 +405,7 @@ class TranslationsModel extends ListModel
 
 								$path = constant('LOCALISEPATH_' . strtoupper($client)) . '/language/' . $tag . '/joomla.ini';
 
-								$translation = new \JObject(
+								$translation = new CMSObject(
 									array(
 										'type' => 'joomla',
 										'tag' => $tag,
@@ -450,7 +451,7 @@ class TranslationsModel extends ListModel
 									else
 									{
 										$path = constant('LOCALISEPATH_' . strtoupper($client)) . '/language/' . $tag . '/' . $name . '.ini';
-										$translation = new \JObject(
+										$translation = new CMSObject(
 											array(
 												'type' => '',
 												'tag' => $tag,
@@ -491,7 +492,7 @@ class TranslationsModel extends ListModel
 										else
 										{
 											$path = constant('LOCALISEPATH_' . strtoupper($client)) . '/language/' . $tag . '/' . $name . '.ini';
-											$translation = new \JObject(
+											$translation = new CMSObject(
 												array(
 													'type' => 'library',
 													'tag' => $tag,
@@ -532,7 +533,7 @@ class TranslationsModel extends ListModel
 										else
 										{
 											$path = constant('LOCALISEPATH_' . strtoupper($client)) . '/language/' . $tag . '/' . $name . '.ini';
-											$translation = new \JObject(
+											$translation = new CMSObject(
 												array(
 													'type' => 'package',
 													'tag' => $tag,
@@ -572,7 +573,7 @@ class TranslationsModel extends ListModel
 									else
 									{
 										$path = constant('LOCALISEPATH_' . strtoupper($client)) . '/language/' . $tag . '/' . $name . '.ini';
-										$translation = new \JObject(
+										$translation = new CMSObject(
 											array(
 												'type' => 'file',
 												'tag' => $tag,
@@ -640,7 +641,7 @@ class TranslationsModel extends ListModel
 							elseif ($filter_storage != 'local' && ($filter_origin == '' || $filter_origin == $origin))
 							{
 								$path = constant('LOCALISEPATH_' . strtoupper($client)) . "/language/$tag/$prefix$extension$suffix.ini"; // force use new format
-								$translation = new \JObject(
+								$translation = new CMSObject(
 									array(
 										'type' => $type,
 										'tag' => $tag,
@@ -709,7 +710,7 @@ class TranslationsModel extends ListModel
 				foreach ($tags as $tag)
 				{
 					$path = constant('LOCALISEPATH_' . strtoupper($client)) . "/language/overrides/$tag.override.ini";
-					$translation = new \JObject(
+					$translation = new CMSObject(
 						array(
 							'type' => 'override',
 							'tag' => $tag,

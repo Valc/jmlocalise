@@ -718,7 +718,7 @@ class TranslationModel extends AdminModel
 
 					if ($reftag == 'en-GB' && $istranslation == 1)
 					{
-						$db_data = new \JObject;
+						$db_data = new CMSObject;
 						$db_data->client     = $client;
 						$db_data->reflang    = $reftag;
 						$db_data->targetlang = $tag;
@@ -804,7 +804,7 @@ class TranslationModel extends AdminModel
 													{
 														$issueddata[$key] = $parsed_string;
 
-														$issues_data = new \JObject;
+														$issues_data = new CMSObject;
 														$issues_data->client            = $client;
 														$issues_data->reflang           = $reftag;
 														$issues_data->targetlang        = $tag;
@@ -871,7 +871,7 @@ class TranslationModel extends AdminModel
 													{
 														$issueddata[$key] = $parsed_string;
 
-														$issues_data = new \JObject;
+														$issues_data = new CMSObject;
 														$issues_data->client            = $client;
 														$issues_data->reflang           = $reftag;
 														$issues_data->targetlang        = $tag;
@@ -2483,7 +2483,7 @@ class TranslationModel extends AdminModel
 
 			if (!empty($data['falsepositive']) && $reflang == 'en-GB' && $reflang != $targetlang)
 			{
-				$db_data = new \JObject;
+				$db_data = new CMSObject;
 				$db_data->client     = $client;
 				$db_data->reflang    = $reflang;
 				$db_data->targetlang = $targetlang;
@@ -2494,7 +2494,7 @@ class TranslationModel extends AdminModel
 				foreach ($stored_false_positives as $stored)
 				{
 					$key = $stored->key;
-					$issues_data = new \JObject;
+					$issues_data = new CMSObject;
 					$issues_data->id         = $stored->id;
 					$issues_data->client     = $client;
 					$issues_data->reflang    = $reflang;
@@ -2510,7 +2510,7 @@ class TranslationModel extends AdminModel
 						$issues_data->is_false_positive = '0';
 					}
 
-					$issues_data->key               = $key;
+					$issues_data->key    = $key;
 					$issues_data->targetlang_string = base64_encode($data['strings'][$key]);
 
 					$update = LocaliseHelper::updateFalsePositive($issues_data);

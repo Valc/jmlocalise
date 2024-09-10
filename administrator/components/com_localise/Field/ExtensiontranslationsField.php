@@ -74,13 +74,6 @@ class ExtensiontranslationsField extends GroupedlistField
 
 		$istranslation  = $reftag != $langtag;
 
-		$known_corefiles = LocaliseHelper::getKnownCoreFilesList();
-
-		if (!is_array($known_corefiles))
-		{
-			$known_corefiles = array();
-		}
-
 		$coreadminfiles = array();
 		$coresitefiles  = array();
 		$noncorefiles   = array();
@@ -159,7 +152,7 @@ class ExtensiontranslationsField extends GroupedlistField
 
 						foreach ($files as $file)
 						{
-							if (in_array($file, $known_corefiles) || !in_array($file, $noncorefiles[$client]))
+							if (!in_array($file, $noncorefiles[$client]))
 							{
 								continue;
 							}
@@ -208,9 +201,7 @@ class ExtensiontranslationsField extends GroupedlistField
 				// Take off core extensions
 				$file = "$prefix$extension$suffix.ini";
 
-				if (!in_array($file, $known_corefiles)
-					|| ($client == 'Site' && !in_array($file, $coresitefiles))
-					|| ($client == 'Administrator' && !in_array($file, $coreadminfiles)))
+				if (($client == 'Site' && !in_array($file, $coresitefiles)) || ($client == 'Administrator' && !in_array($file, $coreadminfiles)))
 				{
 					if (Folder::exists("$path$extension/language"))
 					{

@@ -23,6 +23,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Table\Table;
 use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
+use Joomla\CMS\Object\CMSObject;
 
 include_once JPATH_ADMINISTRATOR . '/components/com_localise/Helper/defines.php';
 
@@ -124,7 +125,7 @@ class LanguageModel extends AdminModel
 	/**
 	 * Method to get the data that should be injected in the form.
 	 *
-	 * @return   \JObject  The data for the form.
+	 * @return   CMSObject  The data for the form.
 	 */
 	protected function loadFormData()
 	{
@@ -132,7 +133,7 @@ class LanguageModel extends AdminModel
 		$data = Factory::getApplication()->getUserState('com_localise.edit.language.data', array());
 
 		// Get the language data.
-		$data = empty($data) ? $this->getItem() : new \JObject($data);
+		$data = empty($data) ? $this->getItem() : new CMSObject($data);
 
 		$data->joomlacopyright = sprintf("Copyright (C) 2005 - %s Open Source Matters. All rights reserved.", Factory::getDate()->format('Y'));
 
@@ -170,7 +171,7 @@ class LanguageModel extends AdminModel
 	 *
 	 * @param   integer  $pk  The ID of the primary key.
 	 *
-	 * @return \JObject
+	 * @return CMSObject
 	 */
 	public function getItem($pk = null)
 	{
@@ -183,7 +184,7 @@ class LanguageModel extends AdminModel
 			$tag = '';
 		}
 
-		$language = new \JObject;
+		$language = new CMSObject;
 		$language->id          = $id;
 		$language->client      = $client;
 		$language->tag         = $tag;

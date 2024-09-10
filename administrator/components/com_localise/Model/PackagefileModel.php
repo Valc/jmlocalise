@@ -26,7 +26,7 @@ use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Table\Table;
 use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
-
+use Joomla\CMS\Object\CMSObject;
 
 /**
  * Package Model class for the Localise component
@@ -163,7 +163,7 @@ class PackageFileModel extends AdminModel
 	 *
 	 * @param   integer  $pk  The ID of the primary key.
 	 *
-	 * @return \JObject the package
+	 * @return CMSObject the package
 	 */
 	public function getItem($pk = null)
 	{
@@ -174,7 +174,7 @@ class PackageFileModel extends AdminModel
 
 		$id = $this->getState('packagefile.id');
 		$id = is_array($id) ? (count($id) > 0 ? $id[0] : 0) : $id;
-		$package = new \JObject;
+		$package = new CMSObject;
 		$package->checked_out = 0;
 		$package->standalone  = true;
 		$package->manifest    = null;
@@ -641,7 +641,7 @@ class PackageFileModel extends AdminModel
 			else
 			{
 				// Redirect to the new $id as name has changed
-				$app->redirect(\JRoute::_('index.php?option=com_localise&view=packagefile&layout=edit&id=' . $this->getState('packagefile.id'), false));
+				$app->redirect(Route::_('index.php?option=com_localise&view=packagefile&layout=edit&id=' . $this->getState('packagefile.id'), false));
 			}
 		}
 
@@ -958,7 +958,7 @@ class PackageFileModel extends AdminModel
 		$form_package->setFieldAttribute($name = 'translations', 'reftag', $reftag);
 		$form_package->setFieldAttribute($name = 'translations', 'langtag', $langtag);
 
-		$html_output = new \JObject;
+		$html_output = new CMSObject;
 		$html_output->translations = $form_package->renderField('translations');
 
 		// The highligthted cases to set as "selected" getting it from the package xml file, if the package filename exists.
