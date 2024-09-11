@@ -26,6 +26,7 @@ use Joomla\Component\Localise\Administrator\Model\PackagesModel;
 use Joomla\Component\Localise\Administrator\Model\TranslationModel;
 use Joomla\Github\Github;
 use Joomla\Registry\Registry;
+use Joomla\CMS\Object\CMSObject;
 
 jimport("joomla.utilities.date");
 
@@ -1077,7 +1078,7 @@ abstract class LocaliseHelper
 
 					if ($ext == 'ini' && !in_array($file_to_include, $stored_core_files))
 					{
-						$core_file           = new \JObject;
+						$core_file           = new CMSObject;
 						$core_file->id       = null;
 						$core_file->filename = $file_to_include;
 
@@ -1797,7 +1798,7 @@ abstract class LocaliseHelper
 
 				if ($ext == 'ini' && !in_array($file_to_include, $stored_core_files))
 				{
-					$core_file           = new \JObject;
+					$core_file           = new CMSObject;
 					$core_file->id       = null;
 					$core_file->filename = $file_to_include;
 
@@ -1925,7 +1926,7 @@ abstract class LocaliseHelper
 
 						if (!in_array($deleted_key, $stored_renamed_keys))
 						{
-							$key_data                  = new \JObject;
+							$key_data                  = new CMSObject;
 							$key_data->id              = null;
 							$key_data->client          = $info['client'];
 							$key_data->reflang         = 'en-GB';
@@ -1944,7 +1945,7 @@ abstract class LocaliseHelper
 
 						if (!in_array($deleted_key, $stored_deleted_keys))
 						{
-							$key_data          = new \JObject;
+							$key_data          = new CMSObject;
 							$key_data->id      = null;
 							$key_data->reflang = 'en-GB';
 							$key_data->key     = $deleted_key;
@@ -3131,7 +3132,7 @@ abstract class LocaliseHelper
 	 */
 	public static function parseStringIssues($ref_string, $translation_string)
 	{
-		$reply                = new \JObject;
+		$reply                = new CMSObject;
 		$reply->is_issued     = false;
 		$reply->engb_string   = '';
 		$reply->ttms_string   = '';
@@ -3493,7 +3494,7 @@ abstract class LocaliseHelper
 			return false;
 		}
 
-		$key_case =  new \JObject;
+		$key_case =  new CMSObject;
 
 		// Converting the key to array
 		$root_key = explode('_', $key);
@@ -3527,7 +3528,7 @@ abstract class LocaliseHelper
 	 * Determine if the key is a plural case comming from the en-GB language.
 	 *
 	 * @param   string  $key             The key to be validated.
-	 * @param   array   $ref_keys_only   The en-GB keys present within the file.
+	 * @param   array   $$ref_keys_only  The en-GB keys present within the file.
 	 *
 	 * @return object
 	 */
@@ -3537,7 +3538,7 @@ abstract class LocaliseHelper
 		// To handle them is required take in mind than is allowed use multiple suffixes to reply to the same plural case.
 		// Those are 'Regular plural cases' due are also present as 'common keys' to translate.
 		// Also seems the Joomla Project is allowing a sort of 'fake plurals'
-		// due they does not reply with a validated suffix when called by (xx-XX) localise.php file using the 'getPluralSuffixes($n)'function.
+		// due they does not reply with a validated suffix when called by en-GB localise.php file using the 'getPluralSuffixes($n)'function.
 		// The "orphan keys" is only used under "debug mode" for testing purposes.
 
 		if (empty($key))
@@ -3551,7 +3552,7 @@ abstract class LocaliseHelper
 		// The en-GB plural suffixes cases.
 		$plural_suffixes = array('0', '1', 'ONE', 'MORE', 'OTHER');
 
-		$key_case = new \JObject;
+		$key_case = new CMSObject;
 
 		// Converting the key to array
 		$root_key = explode('_', $key);
@@ -3617,7 +3618,7 @@ abstract class LocaliseHelper
 			return false;
 		}
 
-		$suffixes_data =  new \JObject;
+		$suffixes_data =  new CMSObject;
 
 		// $plural_suffixes will store all the matches.
 		$plural_suffixes = array();

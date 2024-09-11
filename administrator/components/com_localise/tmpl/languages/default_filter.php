@@ -8,8 +8,9 @@
  */
 
 defined('_JEXEC') or die;
+use Joomla\CMS\Object\CMSObject;
 
-$params = (isset($this->state->params)) ? $this->state->params : new \JObject;
+$params = (isset($this->state->params)) ? $this->state->params : new CMSObject;
 
 ?>
 <div class="row">

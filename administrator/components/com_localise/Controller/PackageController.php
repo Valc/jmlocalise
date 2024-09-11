@@ -17,6 +17,7 @@ use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
+use Joomla\CMS\Object\CMSObject;
 
 /**
  * Package Controller class for the Localise component
@@ -152,7 +153,7 @@ class PackageController extends FormController
 			// Initialise variables.
 			$app   = Factory::getApplication();
 			$input = $app->input;
-			$reply = new \JObject;
+			$reply = new CMSObject;
 			$data  = $input->get('data', null, 'RAW');
 			$data  = json_decode($data);
 

@@ -109,34 +109,11 @@ class HtmlView extends BaseHtmlView
 		if (!$isNew && $canDo->get('localise.create'))
 		{
 			ToolBarHelper::divider();
-
-			if (isset($this->item->language) && $this->item->language == 'en-GB')
-			{
-				$toolbar->standardButton('delete')
-						->icon('icon-upload')
- 						->buttonClass('btn btn-info disabled')
-						->text('COM_LOCALISE_BUTTON_IMPORT_FILE');
-			}
-			else
-			{
-				ToolbarHelper::modal('fileModal', 'icon-upload', 'COM_LOCALISE_BUTTON_IMPORT_FILE');
-			}
-
+			ToolbarHelper::modal('fileModal', 'icon-upload', 'COM_LOCALISE_BUTTON_IMPORT_FILE');
 			ToolBarHelper::divider();
 		}
 
-		if (isset($this->item->language) && $this->item->language == 'en-GB')
-		{
-			$toolbar->standardButton('delete')
-					->icon('out.png')
- 					->buttonClass('btn btn-info disabled')
-					->text('COM_LOCALISE_TOOLBAR_PACKAGE_DOWNLOAD');
-		}
-		else
-		{
-			ToolbarHelper::custom('package.download', 'out.png', 'out.png', 'COM_LOCALISE_TOOLBAR_PACKAGE_DOWNLOAD', false);
-		}
-
+		ToolbarHelper::custom('package.download', 'out.png', 'out.png', 'COM_LOCALISE_TOOLBAR_PACKAGE_DOWNLOAD', false);
 		ToolBarHelper::divider();
 		ToolBarHelper::cancel("package.cancel", $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
 		// ToolBarHelper::divider();

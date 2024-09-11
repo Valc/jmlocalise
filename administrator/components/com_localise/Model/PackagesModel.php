@@ -21,6 +21,7 @@ use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\CMS\Table\Table;
 use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
 use Joomla\Utilities\ArrayHelper;
+use Joomla\CMS\Form\Form;
 
 /**
  * Packages Model class for the Localise component
@@ -231,10 +232,10 @@ class PackagesModel extends ListModel
 
 		// Get the form.
 		jimport('joomla.form.form');
-		\JForm::addFormPath(JPATH_COMPONENT . '/forms');
-		\JForm::addFieldPath(JPATH_COMPONENT . '/field');
+		Form::addFormPath(JPATH_COMPONENT . '/forms');
+		Form::addFieldPath(JPATH_COMPONENT . '/field');
 
-		$form = \JForm::getInstance('com_localise.packages', 'packages', array('control' => 'filters', 'event' => 'onPrepareForm'));
+		$form = Form::getInstance('com_localise.packages', 'packages', array('control' => 'filters', 'event' => 'onPrepareForm'));
 
 		// Check for an error.
 		if ($form instanceof Exception)

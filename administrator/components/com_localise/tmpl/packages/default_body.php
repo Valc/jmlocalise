@@ -37,11 +37,11 @@ $user = Factory::getUser();
 				<?php elseif ($item->writable && $canEdit) : ?>
 					<span class="localise-icon">
 					<?php if ($item->core) : ?>
-						<a class="hasTooltip" href="<?php echo \JRoute::_('index.php?option=com_localise&task=package.edit&id=' . $item->id); ?>" title="<?php echo Text::_('COM_LOCALISE_TOOLTIP_PACKAGES_EDIT'); ?>">
+						<a class="hasTooltip" href="<?php echo Route::_('index.php?option=com_localise&task=package.edit&id=' . $item->id); ?>" title="<?php echo Text::_('COM_LOCALISE_TOOLTIP_PACKAGES_EDIT'); ?>">
 						<?php echo Text::sprintf('COM_LOCALISE_TEXT_PACKAGES_TITLE', Text::_($item->title), $item->name); ?>
 						</a>
 					<?php else: ?>
-						<a class="hasTooltip" href="<?php echo \JRoute::_('index.php?option=com_localise&task=packagefile.edit&id=' . $item->id); ?>" title="<?php echo Text::_('COM_LOCALISE_TOOLTIP_PACKAGES_EDIT'); ?>">
+						<a class="hasTooltip" href="<?php echo Route::_('index.php?option=com_localise&task=packagefile.edit&id=' . $item->id); ?>" title="<?php echo Text::_('COM_LOCALISE_TOOLTIP_PACKAGES_EDIT'); ?>">
 						<?php echo Text::sprintf('COM_LOCALISE_TEXT_PACKAGES_TITLE', Text::_($item->title), $item->name); ?>
 						</a>
 					<?php endif; ?>

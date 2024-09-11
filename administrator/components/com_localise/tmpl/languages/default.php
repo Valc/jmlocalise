@@ -12,6 +12,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Object\CMSObject;
 
 HTMLHelper::_('stylesheet', 'com_localise/localise.css', ['version' => 'auto', 'relative' => true]);
 HTMLHelper::_('jquery.framework');
@@ -37,7 +38,7 @@ $wa->addInlineScript('
 
 $listOrder  = $this->escape($this->state->get('list.ordering'));
 $listDirn   = $this->escape($this->state->get('list.direction'));
-//$params = (isset($this->state->params)) ? $this->state->params : new \JObject;
+//$params = (isset($this->state->params)) ? $this->state->params : new CMSObject;
 ?>
 <form action="<?php echo Route::_('index.php?option=com_localise&view=languages');?>" method="post" name="adminForm" id="adminForm">
 	<div class="row">

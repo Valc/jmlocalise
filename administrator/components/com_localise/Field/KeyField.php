@@ -17,6 +17,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Session\Session;
 use Joomla\Registry\Registry;
+use Joomla\CMS\Object\CMSObject;
 
 use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
 /**
@@ -45,7 +46,7 @@ class KeyField extends FormField
 	 */
 	protected function getLabel()
 	{
-		$field_data                         = new \JObject;
+		$field_data                         = new CMSObject;
 		$field_data->field_key              = (string) $this->element['name'];
 		$field_data->field_details          = '';
 		$field_data->field_label            = '';
@@ -120,7 +121,7 @@ class KeyField extends FormField
 
 		if ($isissued == '1' && $istranslation == '1')
 		{
-			$db_data                    = new \JObject;
+			$db_data                    = new CMSObject;
 			$db_data->client            = $client;
 			$db_data->reflang           = $reflang;
 			$db_data->targetlang        = $targetlang;
@@ -382,7 +383,7 @@ class KeyField extends FormField
 				. strtoupper($status))
 				. '</span>';
 
-			$field_data->reflang        = $targetlang;
+			$field_data->reflang = $targetlang;
 			$field_data->field_label    = $label;
 			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
 
@@ -438,7 +439,7 @@ class KeyField extends FormField
 					. '</span>';
 			}
 
-			$field_data->reflang        = $targetlang;
+			$field_data->reflang = $targetlang;
 			$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_' . strtoupper($status)) . '</span>';
 			$field_data->field_label    = $label;
 			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
@@ -489,7 +490,7 @@ class KeyField extends FormField
 				$field_data->field_details .= '<span class="badge bg-warning">' . Text::_('COM_LOCALISE_TEXT_TRANSLATION_DUPLICATED_AT_TAB') . '</span>';
 			}
 
-			$field_data->reflang        = $targetlang;
+			$field_data->reflang = $targetlang;
 			$field_data->field_label    = $label;
 			$field_data->field_checkbox = '<div class="float-end">' . $notinref_checkbox . '</div>';
 
@@ -575,7 +576,7 @@ class KeyField extends FormField
 	 */
 	protected function getInput()
 	{
-		$field_data                  = new \JObject;
+		$field_data                  = new CMSObject;
 		$field_data->field_input     = '';
 		$field_data->field_button    = '';
 		$field_data->field_button2   = '';
@@ -950,4 +951,5 @@ class KeyField extends FormField
 			return false;
 		}
 	}
+
 }
