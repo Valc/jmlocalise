@@ -45,13 +45,13 @@ class IniField extends FormField
 	{
 		HTMLHelper::_('behavior.core');
 		HTMLHelper::_('jquery.framework');
-		$basePath = 'media/vendor/codemirror/';
+		$basePath = 'media/com_localise/js/';
 		// Load Codemirror
-		HTMLHelper::_('script', $basePath . 'lib/codemirror.min.js', array('version' => 'auto'));
-		HTMLHelper::_('script', $basePath . 'lib/codemirror-ce.min.js', array('version' => 'auto'));
-		HTMLHelper::_('script', $basePath . 'lib/addons.min.js', array('version' => 'auto'));
-		HTMLHelper::_('stylesheet', $basePath . 'lib/codemirror.css', array('version' => 'auto'));
-		HTMLHelper::_('script', 'plg_editors_codemirror/joomla-editor-codemirror.min.js', array('version' => 'auto', 'relative' => true));
+		HTMLHelper::_('script', $basePath . 'codemirror.min.js', array('version' => 'auto'));
+		HTMLHelper::_('script', $basePath . 'codemirror-ce.min.js', array('version' => 'auto'));
+		HTMLHelper::_('script', $basePath . 'addons.min.js', array('version' => 'auto'));
+		HTMLHelper::_('stylesheet', $basePath . 'codemirror.css', array('version' => 'auto'));
+		HTMLHelper::_('script', $basePath . 'joomla-editor-codemirror.min.js', array('version' => 'auto', 'relative' => true));
 
 		// Load Joomla language ini parser
 		HTMLHelper::_('script', 'com_localise/parseini.js', array('version' => 'auto', 'relative' => true));
