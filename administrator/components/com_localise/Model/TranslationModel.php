@@ -202,11 +202,15 @@ class TranslationModel extends AdminModel
 
 				if ($istranslation == 1)
 				{
-					if (File::exists($this->getState('translation.refpath')) && File::exists($this->getState('translation.path')))
+                    if (!is_string($this->getState('translation.refpath')))
+                    {
+                        $filestate = 'notinref';
+                    }
+					else if (File::exists($this->getState('translation.refpath')) && File::exists($this->getState('translation.path')))
 					{
 						$filestate = 'inlanguage';
 					}
-					else if (File::exists($this->getState('translation.path')))
+					else if (!File::exists($this->getState('translation.refpath')) || File::exists($this->getState('translation.path')))
 					{
 						$filestate = 'notinref';
 					}
@@ -316,6 +320,7 @@ class TranslationModel extends AdminModel
 				{
 					$devpath    = LocaliseHelper::searchDevpath($gh_client, $refpath);
 					$custompath = LocaliseHelper::searchCustompath($gh_client, $refpath);
+                    $fname      = basename($path);
 
 					if ($istranslation == 0 && $reftag == 'en-GB')
 					{
@@ -433,6 +438,17 @@ class TranslationModel extends AdminModel
 							$has_headers = true;
 						}
 
+                        if (!is_string($line))
+                        {
+							$message = "[$fname] The line Nº$lineNumber is not a string.";
+								Factory::getApplication()->enqueueMessage(
+								Text::_($message),
+								'warning');
+                            Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_LINE_IS_NOT_A_STRING',
+                                $fname),
+                                'warning');
+                            continue;
+                        }
 						if ($line[0] == '#')
 						{
 							$this->item->error[] = $lineNumber;
@@ -1701,7 +1717,16 @@ class TranslationModel extends AdminModel
 					}
 					elseif (!preg_match('/^(|(\[[^\]]*\])|([A-Z][A-Z0-9_:\*\-\.]*\s*=(\s*(("[^"]*")|(_QQ_)))+))\s*(;.*)?$/', $line))
 					{
-						$this->item->error[] = $lineNumber;
+                        if (is_numeric($lineNumber))
+                        {
+						    $this->item->error[] = $lineNumber;
+                        }
+                        else
+                        {
+                            Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_LINE_NOT_ENUMERABLE',
+                                $fname),
+                                'warning');
+                        }
 					}
 				}
 
