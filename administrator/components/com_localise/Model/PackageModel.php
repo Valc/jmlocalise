@@ -1310,6 +1310,12 @@ class PackageModel extends AdminModel
 
 			return false;
 		}
+		else if ($tag == 'en-GB')
+		{
+            // Prevent to create en-GB core language packs due that one is provided by the Joomla Team and included within Joomla download.
+			$app->enqueueMessage(Text::_('COM_LOCALISE_FILE_ENGB_TAG_ERROR'), 'error');
+			return false;
+		}
 
 		$fileName = File::makeSafe($file['name']);
 		$ext      = File::getExt($fileName);
