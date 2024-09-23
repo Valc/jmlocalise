@@ -868,6 +868,19 @@ class PackageModel extends AdminModel
 
 			$site_package_files[] = array('name' => 'localise.php','data' => $language_data);
 
+            // The translations will use this file to add the common words and is started if not present when the translated language pack is created.
+			$path = JPATH_ROOT . '/language/' . $data['language'] . '/com_finder.commonwords.txt';
+
+			if (File::exists($path))
+			{
+				$language_data = file_get_contents($path);
+
+				if (!empty($language_data))
+				{
+					$site_package_files[] = array('name' => 'com_finder.commonwords.txt','data' => $language_data);
+				}
+			}
+
 			if ($msg)
 			{
 				$msg .= '<p>...</p>';
@@ -1301,17 +1314,24 @@ class PackageModel extends AdminModel
 		$fileName = File::makeSafe($file['name']);
 		$ext      = File::getExt($fileName);
 
-		// Prevent uploading some file types
-		if (!($ext == "ini" || $fileName == $tag . '.css' || $fileName == 'localise.php'))
+		// Prevent uploading some file types and only allow the custom ones than a translated language pack can to require upload.
+		if (!($ext == "ini" || $fileName == $tag . '.css' || $fileName == 'localise.php' || $fileName == 'com_finder.commonwords.txt'))
 		{
 			$app->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_TYPE_ERROR', $fileName), 'error');
 
 			return false;
 		}
 
+        // Prevent to upload valid files out of valid folders to store it.
 		if ($fileName == $tag . '.css' && $location == LOCALISEPATH_SITE)
 		{
 			$app->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_CSS_ERROR', $fileName), 'error');
+
+			return false;
+		}
+		else if ($fileName == 'com_finder.commonwords.txt' && $location == LOCALISEPATH_ADMINISTRATOR)
+		{
+			$app->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_COMMONWORDS_ERROR', $fileName), 'error');
 
 			return false;
 		}

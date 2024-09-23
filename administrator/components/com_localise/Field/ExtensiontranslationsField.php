@@ -74,6 +74,16 @@ class ExtensiontranslationsField extends GroupedlistField
 
 		$istranslation  = $reftag != $langtag;
 
+        // Known core files are detected getting the list.
+        // This list is updated at DB each time is revised the Joomla repository at Github,
+        // so it is automatically updated when are added new files at language folders from the Joomla CMS at Github.
+		$known_corefiles = LocaliseHelper::getKnownCoreFilesList();
+
+		if (!is_array($known_corefiles))
+		{
+			$known_corefiles = array();
+		}
+
 		$coreadminfiles = array();
 		$coresitefiles  = array();
 		$noncorefiles   = array();
@@ -152,7 +162,9 @@ class ExtensiontranslationsField extends GroupedlistField
 
 						foreach ($files as $file)
 						{
-							if (!in_array($file, $noncorefiles[$client]))
+                            // To exclude any core file from this field is required to revise that the filename is not present at known core files list.
+                            // To create non core packs is not required to display the core language files, or duplicate the data.
+                            if (in_array($file, $known_corefiles) || !in_array($file, $noncorefiles[$client]))
 							{
 								continue;
 							}
@@ -201,7 +213,10 @@ class ExtensiontranslationsField extends GroupedlistField
 				// Take off core extensions
 				$file = "$prefix$extension$suffix.ini";
 
-				if (($client == 'Site' && !in_array($file, $coresitefiles)) || ($client == 'Administrator' && !in_array($file, $coreadminfiles)))
+                // The field will attemtp to display non-core files only, so if the file name is at corefiles list will be excluded.
+				if (!in_array($file, $known_corefiles)
+					|| ($client == 'Site' && !in_array($file, $coresitefiles))
+					|| ($client == 'Administrator' && !in_array($file, $coreadminfiles)))
 				{
 					if (Folder::exists("$path$extension/language"))
 					{

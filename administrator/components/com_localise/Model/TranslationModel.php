@@ -440,10 +440,6 @@ class TranslationModel extends AdminModel
 
                         if (!is_string($line))
                         {
-							$message = "[$fname] The line Nº$lineNumber is not a string.";
-								Factory::getApplication()->enqueueMessage(
-								Text::_($message),
-								'warning');
                             Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_LINE_IS_NOT_A_STRING',
                                 $fname),
                                 'warning');

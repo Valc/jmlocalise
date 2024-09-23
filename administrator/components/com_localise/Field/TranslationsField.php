@@ -74,6 +74,13 @@ class TranslationsField extends GroupedlistField
 
 		$istranslation  = $reftag != $langtag;
 
+		$known_corefiles = LocaliseHelper::getKnownCoreFilesList();
+
+		if (!is_array($known_corefiles))
+		{
+			$known_corefiles = array();
+		}
+
 		$coreadminfiles = array();
 		$coresitefiles  = array();
 		$noncorefiles   = array();
@@ -139,14 +146,17 @@ class TranslationsField extends GroupedlistField
 						$allfiles[$client][$tag] = array();
 						$files                   = Folder::files("$path/$tag", ".ini$");
 
+                        // To get the real non core file is compared vs the total amount of known core file names.
+                        // A core file name maybe not present at the current Jomla develpment maybe present at user language folders after update Joomla.
+                        // Than ones are the extra core language files in translation to handle later.
 						if ($client == 'Site')
 						{
-							$noncorefiles[$client] = array_diff($files, $coresitefiles);
+							$noncorefiles[$client] = array_diff($files, $coresitefiles, $known_corefiles);
 						}
 						elseif ($client == 'Administrator')
 						{
-							$noncorefiles[$client] = array_diff($files, $coreadminfiles);
-						}
+							$noncorefiles[$client] = array_diff($files, $coreadminfiles, $known_corefiles);
+                        }
 
 						foreach ($files as $file)
 						{
