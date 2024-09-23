@@ -617,9 +617,11 @@ abstract class LocaliseHelper
 	 */
 	public static function loadLanguage($extension, $client)
 	{
-		$extension = strtolower($extension);
-		$lang      = Factory::getLanguage();
-		$prefix    = substr($extension, 0, 3);
+		$extension  = strtolower($extension);
+		$lang       = Factory::getLanguage();
+		$prefix     = substr($extension, 0, 3);
+        $parts      = explode('.', $extension);
+	    $first_part = $parts[0];
 
 		switch ($prefix)
 		{
@@ -636,8 +638,8 @@ abstract class LocaliseHelper
 				break;
 
 			case 'plg':
-				$lang->load($extension, 'LOCALISEPATH_' . 'ADMINISTRATOR', null, false, true)
-					|| $lang->load($extension, LOCALISEPATH_ADMINISTRATOR . "/components/$extension/", null, false, true);
+				$lang->load($extension, constant('LOCALISEPATH_ADMINISTRATOR'), null, false, true)
+					|| $lang->load($extension, constant('LOCALISEPATH_ADMINISTRATOR') . "/components/$extension/", null, false, true);
 
 				break;
 
@@ -655,6 +657,12 @@ abstract class LocaliseHelper
 
 				break;
 		}
+
+		if ($first_part == 'guidedtours')
+        {
+			$lang->load($extension, constant('LOCALISEPATH_ADMINISTRATOR'), null, false, true)
+				|| $lang->load($extension, constant('LOCALISEPATH_SITE'), null, false, true);
+        }
 	}
 
 	/**

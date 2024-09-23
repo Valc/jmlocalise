@@ -274,6 +274,10 @@ div.word-break-width-100 {
 	content: "";
 	color: #EF8F00;
 }
+.icon-16-incomplete:before {
+    content: "●";
+	color: #EF8F00;
+}
 .icon-16-info:before {
   font-family: 'Font Awesome 5 Free';
 	content: "\f05a";

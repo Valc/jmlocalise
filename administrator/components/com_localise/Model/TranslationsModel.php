@@ -273,6 +273,10 @@ class TranslationsModel extends ListModel
 							foreach ($files as $file)
 							{
 								$filename = substr($file, 0, strlen($file) - 4);
+
+			                    $parts      = explode('.', $file);
+			                    $first_part = $parts[0];
+
 								$origin = LocaliseHelper::getOrigin($filename, $client);
 
 								if (preg_match("/$filter_origin/", $origin))
@@ -342,6 +346,12 @@ class TranslationsModel extends ListModel
 									{
 										// Scan library ini file
 										$translation->setProperties(array('type' => 'library', 'filename' => $filename, 'name' => $filename));
+										$this->translations["$client|$tag|$filename"] = $translation;
+									}
+									elseif ($first_part == "guidedtours" && preg_match("/$filter_type/", 'guide'))
+									{
+										// Scan guidedtours ini file
+										$translation->setProperties(array('type' => 'guide', 'filename' => $filename, 'name' => $filename));
 										$this->translations["$client|$tag|$filename"] = $translation;
 									}
 								}
