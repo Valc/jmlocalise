@@ -157,12 +157,27 @@ abstract class LocaliseHelper
 	 */
 	public static function getOrigin($filename, $client)
 	{
+        // New test with a workarrownd
+        $known_corefiles = self::getKnownCoreFilesList();
+
 		if ($filename == 'override')
 		{
 			return '_override';
 		}
+        else if (in_array($filename . ".ini", $known_corefiles))
+        {
+			return 'core';
+        }
+        else
+        {
+			return '_thirdparty';
+        }
 
         // To revise due some filters such ar "Origin" does not work from translation view calling this code.
+		//if ($filename == 'override')
+		//{
+		//	return '_override';
+		//}
 
 		// If the $origins array doesn't contain data, fill it
 		//if (empty(static::$origins['site']))
@@ -178,17 +193,6 @@ abstract class LocaliseHelper
 		//{
 		//	return '_thirdparty';
 		//}
-
-        // New test with a workarrownd
-        $known_corefiles = self::getKnownCoreFilesList();
-        if (in_array($filename . ".ini", $known_corefiles))
-        {
-			return 'core';
-        }
-        else
-        {
-			return '_thirdparty';
-        }
 	}
 
 	/**
