@@ -162,20 +162,33 @@ abstract class LocaliseHelper
 			return '_override';
 		}
 
-		// If the $origins array doesn't contain data, fill it
-		if (empty(static::$origins['site']))
-		{
-			static::scanPackages();
-		}
+        // To revise due some filters such ar "Origin" does not work from translation view calling this code.
 
-		if (isset(static::$origins[$client][$filename]))
-		{
-			return static::$origins[$client][$filename];
-		}
-		else
-		{
+		// If the $origins array doesn't contain data, fill it
+		//if (empty(static::$origins['site']))
+		//{
+		//	static::scanPackages();
+		//}
+
+		//if (isset(static::$origins[$client][$filename]))
+		//{
+		//	return static::$origins[$client][$filename];
+		//}
+		//else
+		//{
+		//	return '_thirdparty';
+		//}
+
+        // New test with a workarrownd
+        $known_corefiles = self::getKnownCoreFilesList();
+        if (in_array($filename . ".ini", $known_corefiles))
+        {
+			return 'core';
+        }
+        else
+        {
 			return '_thirdparty';
-		}
+        }
 	}
 
 	/**
