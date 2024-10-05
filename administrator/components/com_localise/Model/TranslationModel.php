@@ -1445,6 +1445,7 @@ class TranslationModel extends AdminModel
 				// It starts as true due normaly all the core files to translate have the en-GB credits presents at the begin of the file to translate.
 				$header     = true;
 				$lineNumber = 0;
+                $fname      = basename($refpath);
 
 				while (!$stream->eof())
 				{
@@ -1715,7 +1716,7 @@ class TranslationModel extends AdminModel
 					{
                         if (is_numeric($lineNumber))
                         {
-						    $this->item->error[] = $lineNumber;
+						    $item->error[] = $lineNumber;
                         }
                         else
                         {
@@ -2086,7 +2087,6 @@ class TranslationModel extends AdminModel
 		$custompath    = LocaliseHelper::searchCustompath($client, $refpath);
 		$exists        = File::exists($path);
 		$refexists     = File::exists($refpath);
-		$notinref      = (array) $data['notinref'];
 		$istranslation = $tag != $reftag;
 		$notinref      = array();
 

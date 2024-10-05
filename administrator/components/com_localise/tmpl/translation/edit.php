@@ -18,6 +18,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\Component\Localise\Administrator\Helper\LocaliseHelper;
 
 HTMLHelper::_('behavior.formvalidator');
+HTMLHelper::_('behavior.keepalive');
 HTMLHelper::_('stylesheet', 'com_localise/localise.css', ['version' => 'auto', 'relative' => true]);
 HTMLHelper::_('jquery.framework');
 
