@@ -170,7 +170,7 @@ class TranslationsModel extends ListModel
 		if ($filter_storage != 'global')
 		{
 			$filter_tag    = $this->getState('filter.tag') ? ("^($reftag|" . $this->getState('filter.tag') . ")$") : '.';
-			$filter_search = $app->getUserState('filter.search') ? $app->getUserState('filter.search') : '.';
+			$filter_search = $this->getState('filter.search') ? $this->getState('filter.search') : '.';
 			$scans         = LocaliseHelper::getScans($this->getState('filter.client'), $this->getState('filter.type'));
 
 			foreach ($scans as $scan)
@@ -242,7 +242,7 @@ class TranslationsModel extends ListModel
 			$filter_client = $this->getState('filter.client');
 			$filter_tag    = $this->getState('filter.tag')    ? ("^($reftag|" . $this->getState('filter.tag') . ")$") : '.';
 			$filter_type   = $this->getState('filter.type')   ? $this->getState('filter.type')   : '.';
-			$filter_search = $app->getUserState('filter.search') ? $app->getUserState('filter.search') : '.';
+			$filter_search = $this->getState('filter.search') ? $this->getState('filter.search') : '.';
 			$filter_origin = $this->getState('filter.origin') ? $this->getState('filter.origin') : '.';
 
 			if (empty($filter_client))
@@ -374,7 +374,7 @@ class TranslationsModel extends ListModel
 
 		$reftag         = $this->getState('translations.reference');
 		$filter_tag     = $this->getState('filter.tag')    ? ("^($reftag|" . $this->getState('filter.tag') . ")$") : '.';
-		$filter_search  = $app->getUserState('filter.search') ? $app->getUserState('filter.search') : '.';
+		$filter_search  = $this->getState('filter.search') ? $this->getState('filter.search') : '.';
 		$filter_storage = $this->getState('filter.storage');
 		$filter_origin  = $this->getState('filter.origin');
 		$filter_client  = $this->getState('filter.client');
@@ -691,7 +691,7 @@ class TranslationsModel extends ListModel
 		$filter_storage = $this->getState('filter.storage');
 		$filter_type    = $this->getState('filter.type');
 		$filter_origin  = $this->getState('filter.origin') ? $this->getState('filter.origin') : '.';
-		$filter_search  = $app->getUserState('filter.search') ? $app->getUserState('filter.search') : '.';
+		$filter_search  = $this->getState('filter.search') ? $this->getState('filter.search') : '.';
 
 		if ((empty($filter_client) || $filter_client != 'installation')
 			&& (empty($filter_storage) || $filter_storage == 'global')
@@ -789,7 +789,7 @@ class TranslationsModel extends ListModel
 				. ($this->getState('filter.storage') ? $this->getState('filter.storage') . '-' : '')
 				. ($this->getState('filter.tag')     ? ("^(" . $this->getState('translations.reference') . "|" . $this->getState('filter.tag') . ")$") . '-' : '')
 				. ($this->getState('filter.type')    ? $this->getState('filter.type') . '-' : '')
-				. ($app->getUserState('filter.search')  ? $app->getUserState('filter.search') . '-' : '')
+				. ($this->getState('filter.search')  ? $this->getState('filter.search') . '-' : '')
 				. ($this->getState('filter.origin')  ? $this->getState('filter.origin') . '-' : '');
 
 			$key = substr($key, 0, strlen($key) - 1);

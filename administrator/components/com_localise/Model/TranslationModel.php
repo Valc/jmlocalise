@@ -441,7 +441,7 @@ class TranslationModel extends AdminModel
                         if (!is_string($line))
                         {
                             Factory::getApplication()->enqueueMessage(Text::sprintf('COM_LOCALISE_FILE_LINE_IS_NOT_A_STRING',
-                                $fname),
+                                $fname, $lineNumber),
                                 'warning');
                             continue;
                         }
@@ -1116,12 +1116,12 @@ class TranslationModel extends AdminModel
 				// Count the number of lines in the ini file to check max_input_vars
 				if ($tag != $reftag)
 				{
-					if (File::exists($path))
+					if (!empty($path) && is_string($path) && File::exists($path))
 					{
 						$this->item->linespath = count(file($path));
 					}
 
-					if (File::exists($refpath))
+					if (!empty($refpath) && is_string($refpath) && File::exists($refpath))
 					{
 						$this->item->linesrefpath = count(file($refpath));
 					}
